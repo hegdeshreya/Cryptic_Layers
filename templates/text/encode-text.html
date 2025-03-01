@@ -44,8 +44,9 @@
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <form method="POST" action="{{ url_for('text.text_encode') }}" enctype="multipart/form-data">
+                             
                                 <div class="mb-3">
-                                    <label for="image" class="form-label">Choose Image</label>
+                                    <label for="image" class="form-label">Choose Image (Output will be PNG)</label>
                                     <input type="file" name="image" id="image" class="form-control" accept="image/*" required>
                                 </div>
                                 <div class="mb-3">
