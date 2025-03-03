@@ -1,10 +1,17 @@
+# app.py
 from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from modes.text import text_bp  # Import the text blueprint
+from modes.video import video_bp  # Import the video blueprint
 
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
-app.config['UPLOAD_TEXT_FOLDER'] = "uploads"
+app.config['UPLOAD_FOLDER'] = "uploads"  # Standardized upload folder (removed UPLOAD_TEXT_FOLDER)
+
+# Ensure upload folder exists
+import os
+if not os.path.exists(app.config['UPLOAD_FOLDER']):
+    os.makedirs(app.config['UPLOAD_FOLDER'])
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -32,7 +39,7 @@ def index():
             return redirect(url_for('login'))
         method = request.form.get('method')
         action = request.form.get('action')
-        return redirect(url_for(f'{method}.{method}_{action}'))  # Updated to use blueprint routes
+        return redirect(url_for(f'{method}.{method}_{action}'))  # Dynamic routing to blueprint endpoints
     return render_template("index.html")
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -68,8 +75,9 @@ def logout():
     flash("Logged out successfully!", "success")
     return redirect(url_for('index'))
 
-# Register the text blueprint
+# Register blueprints
 app.register_blueprint(text_bp, url_prefix="/text")
+app.register_blueprint(video_bp, url_prefix="/video")
 
 if __name__ == "__main__":
     app.run(debug=True)
