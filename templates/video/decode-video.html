@@ -38,8 +38,8 @@
                         <div class="card-body">
                             <form method="POST" action="{{ url_for('video.video_decode') }}" enctype="multipart/form-data">
                                 <div class="mb-3">
-                                    <label for="video" class="form-label">Choose Encoded Video (AVI only)</label>
-                                    <input type="file" name="video" id="video" class="form-control" accept="video/avi" required>
+                                    <label for="video" class="form-label">Choose Encoded Video (MP4 or AVI)</label>
+                                    <input type="file" name="video" id="video" class="form-control" accept="video/mp4,video/avi" required>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Decrypt Message?</label>
