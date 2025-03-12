@@ -3,11 +3,16 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from modes.text import text_bp  # Import the text blueprint
 from modes.video import video_bp  # Import the video blueprint
-
+from modes.audio import audio_bp
+from modes.multichannelimage import multichannelimage_bp
+import os
 app = Flask(__name__)
 app.secret_key = "your-secret-key"
-app.config['UPLOAD_FOLDER'] = "uploads"  # Standardized upload folder (removed UPLOAD_TEXT_FOLDER)
 
+app.config['UPLOAD_FOLDER'] = "uploads"
+app.config['UPLOAD_TEXT_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "text")
+app.config['UPLOAD_AUDIO_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "audio")
+app.config['UPLOAD_MULTICHANNELIMAGE_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "multichannelimage")
 # Ensure upload folder exists
 import os
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
@@ -78,6 +83,7 @@ def logout():
 # Register blueprints
 app.register_blueprint(text_bp, url_prefix="/text")
 app.register_blueprint(video_bp, url_prefix="/video")
-
+app.register_blueprint(audio_bp, url_prefix="/audio")
+app.register_blueprint(multichannelimage_bp, url_prefix="/multichannelimage")
 if __name__ == "__main__":
     app.run(debug=True)
