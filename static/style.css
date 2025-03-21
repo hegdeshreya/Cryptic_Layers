@@ -1,250 +1,159 @@
-* {
+/* static/style.css */
+body {
     margin: 0;
     padding: 0;
-    box-sizing: border-box;
-}
-
-body {
     font-family: 'Arial', sans-serif;
-    line-height: 1.6;
-    color: #333;
+    background: #1d1c1c !important; /* Deep dark gray background */
+    color: linear-gradient(-45deg, #fe8c00 30%, #f83600 90%);
+    overflow-x: hidden;
+    position: relative;
 }
 
-.container {
-    width: 80%;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
+/* Animated Stars/Droplets Background */
+.stars {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: -1;
 }
 
-/* Header */
-header {
-    background-color: #2c3e50;
-    color: white;
-    padding: 1rem 0;
+.star {
+    position: absolute;
+    background: rgba(248, 197, 66, 0.8); /* Gold accent for stars */
+    border-radius: 50%;
+    animation: twinkle linear infinite;
+    box-shadow: 0 0 5px rgba(248, 197, 66, 0.5);
 }
 
-header .container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+@keyframes twinkle {
+    0% {
+        opacity: 0.3;
+        transform: scale(0.5);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0.3;
+        transform: scale(0.5);
+    }
 }
 
-header h1 {
-    font-size: 2rem;
+/* Navbar */
+.navbar {
+    background: rgba(20, 20, 20, 0.9) !important;
+    backdrop-filter: blur(5px);
 }
 
-nav a, nav span {
-    color: white;
-    text-decoration: none;
-    margin-left: 20px;
-    font-weight: bold;
+.navbar-brand {
+    color: #f8c542 !important; /* Gold accent */
+    text-shadow: 0 0 5px rgba(248, 197, 66, 0.3);
 }
 
-nav a:hover {
-    color: #3498db;
+.nav-link {
+    color: #ffffff !important;
+    transition: color 0.3s;
+}
+
+.nav-link:hover {
+    color: #f8c542 !important; /* Gold on hover */
 }
 
 /* Hero Section */
 .hero {
-    background-color: #ecf0f1;
-    text-align: center;
-    padding: 4rem 0;
+    padding: 100px 0;
+    background: rgba(0, 0, 0, 0.4);
+    position: relative;
 }
 
-.hero h2 {
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
+.hero h1 {
+    color: #f8c542; /* Gold accent */
+    text-shadow: 0 0 10px rgba(248, 197, 66, 0.5);
 }
 
 .hero p {
-    font-size: 1.2rem;
-    color: #7f8c8d;
+    color: #cccccc;
 }
 
 /* Cards Section */
 .cards {
-    padding: 4rem 0;
-    background-color: #f9f9f9;
-}
-
-.cards h2 {
-    text-align: center;
-    margin-bottom: 2rem;
-    font-size: 2rem;
-}
-
-.card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
+    padding: 60px 0;
 }
 
 .card {
-    background-color: white;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    padding: 20px;
-    text-align: center;
-    transition: transform 0.3s;
+    background: rgba(40, 40, 40, 0.9);
+    border: none;
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(248, 197, 66, 0.3); /* Gold glow */
 }
 
-.card h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
+.card-title {
+    color: #f8c542; /* Gold accent */
 }
 
-.card p {
-    color: #7f8c8d;
-    margin-bottom: 1.5rem;
+.card-text {
+    color: #bbbbbb;
 }
 
-.card form {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.card select {
-    padding: 8px;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.card button {
-    background-color: #3498db;
-    color: white;
+.btn-primary {
+    background: #f8c542; /* Gold accent */
     border: none;
-    padding: 10px;
-    font-size: 1rem;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
+    color: #1a1a1a; /* Dark text for contrast */
+    transition: background 0.3s;
 }
 
-.card button:hover {
-    background-color: #2980b9;
+.btn-primary:hover {
+    background: #e0b036; /* Slightly darker gold */
+    color: #1a1a1a;
 }
 
-/* About, Professional, Contact Sections */
-.about, .professional, .contact {
-    padding: 4rem 0;
-    text-align: center;
+/* About and Professional Sections */
+.about, .professional {
+    padding: 60px 0;
 }
 
-.about h2, .professional h2, .contact h2 {
-    font-size: 2rem;
-    margin-bottom: 1rem;
+.about {
+    background: rgba(30, 30, 30, 0.7);
 }
 
-.about p, .professional p, .contact p {
-    font-size: 1.1rem;
-    color: #7f8c8d;
-    max-width: 800px;
-    margin: 0 auto;
+.professional {
+    background: rgba(20, 20, 20, 0.7);
 }
 
-/* Authentication Section */
-.auth {
-    padding: 4rem 0;
-    background-color: #ecf0f1;
+h2 {
+    color: #f8c542; /* Gold accent for headings */
 }
 
-.auth h2 {
-    font-size: 2rem;
-    margin-bottom: 2rem;
+.text-muted {
+    color: #aaaaaa !important;
 }
 
-.auth-form {
-    max-width: 400px;
-    margin: 0 auto;
-    background-color: white;
-    padding: 20px;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-    text-align: left;
-}
-
-.form-group label {
-    display: block;
-    font-weight: bold;
-    margin-bottom: 0.5rem;
-}
-
-.form-group input {
-    width: 100%;
-    padding: 10px;
-    font-size: 1rem;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-}
-
-.auth-form button {
-    width: 100%;
-    background-color: #3498db;
-    color: white;
-    border: none;
-    padding: 12px;
-    font-size: 1rem;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.auth-form button:hover {
-    background-color: #2980b9;
-}
-
-.auth p {
-    margin-top: 1rem;
-    text-align: center;
-}
-
-.auth p a {
-    color: #3498db;
-    text-decoration: none;
-}
-
-.auth p a:hover {
-    text-decoration: underline;
-}
-
-/* Flash Messages */
-.flash-error {
-    color: #e74c3c;
-    background-color: #f9ebeb;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 1rem;
-    text-align: center;
-}
-
-.flash-success {
-    color: #2ecc71;
-    background-color: #eafaf1;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 1rem;
-    text-align: center;
+/* Contact Section */
+.contact {
+    background: rgba(30, 30, 30, 0.7);
 }
 
 /* Footer */
 footer {
-    background-color: #2c3e50;
-    color: white;
-    padding: 1rem 0;
-    text-align: center;
+    background: rgba(10, 10, 10, 0.9);
+    color: #f8c542; /* Gold accent */
 }
 
-footer p {
-    font-size: 0.9rem;
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .hero {
+        padding: 60px 0;
+    }
+    
+    .hero h1 {
+        font-size: 2rem;
+    }
 }

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Encode Text in Image - Crypticlayers</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: #121212;
+            color: white;
+            overflow: hidden;
+        }
+        .background-animation {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0.5) 10%, transparent 70%), url('https://source.unsplash.com/1600x900/?technology,dark');
+            background-size: cover;
+            filter: blur(3px);
+            z-index: -1;
+        }
+        .card {
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: none;
+            box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
+        }
+        .btn-primary {
+            background-color: #007bff;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            padding: 12px;
+        }
+        .btn-primary:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="background-animation"></div>
+    
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">Crypticlayers</a>
+        </div>
+    </nav>
+    
+    <section class="py-5">
+        <div class="container">
+            <h1 class="text-center mb-4 fw-bold text-light">Encode Text in Image</h1>
+            
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card p-4">
+                        <div class="card-body">
+                            <h4 class="text-center text-white mb-4">Upload and Encode</h4>
+                            <form method="POST" action="{{ url_for('multichannelimage.multichannelimage_encode') }}" enctype="multipart/form-data">
+                                <div class="mb-3">
+                                    <label for="image" class="form-label fw-semibold text-white">Choose Image (PNG or JPG)</label>
+                                    <input type="file" name="image" id="image" class="form-control" accept="image/*" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="text" class="form-label fw-semibold text-white">Message to Hide</label>
+                                    <textarea name="text" id="text" class="form-control" rows="4" required></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold text-white">Encrypt Message?</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input type="radio" name="encrypt" id="encrypt_yes" value="yes" class="form-check-input" onclick="toggleEncryption()">
+                                            <label for="encrypt_yes" class="form-check-label text-white">Yes</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="radio" name="encrypt" id="encrypt_no" value="no" class="form-check-input" onclick="toggleEncryption()" checked>
+                                            <label for="encrypt_no" class="form-check-label text-white">No</label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="encryption-options" class="mt-3" style="display: none;">
+                                    <div class="mb-3">
+                                        <label for="encryption_method" class="form-label fw-semibold text-white">Encryption Method</label>
+                                        <select name="encryption_method" id="encryption_method" class="form-select">
+                                            <option value="caesar">Caesar Cipher</option>
+                                            <option value="vigenere">Vigenère Cipher</option>
+                                            <option value="aes">AES</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3" id="key-field" style="display: none;">
+                                        <label for="encryption_key" class="form-label fw-semibold text-white">Encryption Key (for Vigenère)</label>
+                                        <input type="text" name="encryption_key" id="encryption_key" class="form-control" placeholder="Enter encryption key">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100 mt-3">Encode Image</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    
+    <script>
+        function toggleEncryption() {
+            const encryptYes = document.getElementById('encrypt_yes').checked;
+            const options = document.getElementById('encryption-options');
+            options.style.display = encryptYes ? 'block' : 'none';
+        }
+
+        document.getElementById('encryption_method').addEventListener('change', function() {
+            document.getElementById('key-field').style.display = this.value === 'vigenere' ? 'block' : 'none';
+        });
+    </script>
+</body>
+</html>

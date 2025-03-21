@@ -6,31 +6,31 @@
     <title>Crypticlayers - Secure Data Hiding</title>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <!-- Animated Canvas Background -->
+    <canvas id="backgroundCanvas" style="position: absolute; z-index: 0; top: 0; left: 0; width: 796px; height: 607px;"></canvas>
+
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="/">Crypticlayers</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <a class="navbar-brand fw-bold text-uppercase" href="/">Crypticlayers</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="#methods">Methods</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item">
-                            <span class="nav-link text-light">Welcome, {{ current_user.id }}!</span>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
-                        </li>
+                        <li class="nav-item"><span class="nav-link">Welcome, {{ current_user.id }}!</span></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('register') }}">Register</a>
-                        </li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('register') }}">Register</a></li>
                     {% endif %}
                 </ul>
             </div>
@@ -38,32 +38,18 @@
     </nav>
 
     <!-- Hero Section -->
-    <section class="hero text-center py-5 bg-light">
+    <section class="hero text-center">
         <div class="container">
-            <h1 class="display-4">Hide Your Secrets with Advanced Steganography</h1>
-            <p class="lead text-muted">Securely embed messages in media with cutting-edge techniques.</p>
+            <h1 class="display-4 fw-bold">Hide Your Secrets Securely</h1>
+            <p class="lead">Securely embed messages in media with multi-layer steganography.</p>
         </div>
     </section>
 
     <!-- Steganography Cards -->
-    <section class="cards py-5">
+    <section class="cards py-5" id="methods">
         <div class="container">
             <h2 class="text-center mb-4">Choose Your Method</h2>
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            {% if not current_user.is_authenticated %}
-                <p class="text-center text-danger mb-4">Please <a href="{{ url_for('login') }}" class="text-primary">log in</a> to use encode or decode features.</p>
-            {% endif %}
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
-                <!-- Text Card -->
                 <div class="col">
                     <div class="card h-100 shadow-sm">
                         <div class="card-body">
@@ -80,82 +66,74 @@
                         </div>
                     </div>
                 </div>
-
-                <!-- Image Card -->
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Multi-layer Image</h5>
-                            <p class="card-text">Use RGB channels for enhanced security and capacity.</p>
-                            <form method="POST" action="/">
-                                <input type="hidden" name="method" value="image">
-                                <select name="action" class="form-select mb-3">
-                                    <option value="encode">Encode</option>
-                                    <option value="decode">Decode</option>
-                                </select>
-                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Audio Card -->
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Audio</h5>
-                            <p class="card-text">Embed secrets in audio files discreetly.</p>
-                            <form method="POST" action="/">
-                                <input type="hidden" name="method" value="audio">
-                                <select name="action" class="form-select mb-3">
-                                    <option value="encode">Encode</option>
-                                    <option value="decode">Decode</option>
-                                </select>
-                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Video Card -->
-                <div class="col">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">Video</h5>
-                            <p class="card-text">Conceal data across video frames.</p>
-                            <form method="POST" action="/">
-                                <input type="hidden" name="method" value="video">
-                                <select name="action" class="form-select mb-3">
-                                    <option value="encode">Encode</option>
-                                    <option value="decode">Decode</option>
-                                </select>
-                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
-                            </form>
-                        </div>
-                    </div>
+                <!-- Add other cards (Image, Audio, Video) similarly -->
+           <!-- Image Card -->
+           <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Multi-layer Image</h5>
+                    <p class="card-text">Use RGB channels for enhanced security and capacity.</p>
+                    <form method="POST" action="/">
+                        <input type="hidden" name="method" value="multichannelimage">
+                        <select name="action" class="form-select mb-3">
+                            <option value="encode">Encode</option>
+                            <option value="decode">Decode</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                    </form>
                 </div>
             </div>
         </div>
-    </section>
+
+        <!-- Audio Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Audio</h5>
+                    <p class="card-text">Embed secrets in audio files discreetly.</p>
+                    <form method="POST" action="/">
+                        <input type="hidden" name="method" value="audio">
+                        <select name="action" class="form-select mb-3">
+                            <option value="encode">Encode</option>
+                            <option value="decode">Decode</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Video Card -->
+        <div class="col">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Video</h5>
+                    <p class="card-text">Conceal data across video frames.</p>
+                    <form method="POST" action="/">
+                        <input type="hidden" name="method" value="video">
+                        <select name="action" class="form-select mb-3">
+                            <option value="encode">Encode</option>
+                            <option value="decode">Decode</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
 
     <!-- About Section -->
-    <section class="about py-5 bg-light">
+    <section class="about py-5 bg-light" id="about">
         <div class="container">
             <h2 class="text-center mb-4">About Us</h2>
-            <p class="text-center text-muted">Crypticlayers is a professional platform designed to secure your data using steganography and cryptography. Our mission is to provide innovative tools for privacy and security.</p>
-        </div>
-    </section>
-
-    <!-- Professional Section -->
-    <section class="professional py-5">
-        <div class="container">
-            <h2 class="text-center mb-4">Our Expertise</h2>
-            <p class="text-center text-muted">Leveraging multi-layer steganography and robust encryption methods (Caesar, Vigenère, AES), we offer unparalleled data-hiding solutions for professionals and enthusiasts alike.</p>
+            <p class="text-center text-muted">Crypticlayers is a professional platform designed to secure your data using steganography and cryptography.</p>
         </div>
     </section>
 
     <!-- Contact Section -->
-    <section class="contact py-5 bg-light">
+    <section class="contact py-5 bg-light" id="contact">
         <div class="container">
             <h2 class="text-center mb-4">Contact Us</h2>
             <p class="text-center text-muted">Email: support@crypticlayers.com</p>
@@ -165,12 +143,58 @@
 
     <!-- Footer -->
     <footer class="bg-dark text-white text-center py-3">
-        <div class="container">
-            <p>© 2025 Crypticlayers. All rights reserved.</p>
-        </div>
+        <p>© 2025 Crypticlayers. All rights reserved.</p>
     </footer>
 
-    <!-- Bootstrap JS (for navbar toggle and alerts) -->
+    <!-- Canvas Animation Script -->
+    <script>
+        const canvas = document.getElementById('backgroundCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 796;
+        canvas.height = 607;
+
+        let particles = [];
+        const particleCount = 100;
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 1;
+                this.speed = Math.random() * 0.5 + 0.1;
+                this.opacity = Math.random() * 0.5 + 0.3;
+            }
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(248, 197, 66, ${this.opacity})`; // Gold color
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = '#f8c542';
+                ctx.fill();
+            }
+            update() {
+                this.y += this.speed;
+                if (this.y > canvas.height) this.y = 0;
+                this.opacity = Math.sin(Date.now() * 0.001 + this.x) * 0.3 + 0.7;
+            }
+        }
+
+        for (let i = 0; i < particleCount; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+
+    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
