@@ -1,0 +1,104 @@
+/* General body styling */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f4f7fa;
+    color: #333;
+}
+
+/* Navbar customization */
+.navbar {
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+.nav-link {
+    transition: color 0.3s ease;
+}
+.nav-link:hover {
+    color: #0d6efd !important;
+}
+
+/* Section styling */
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+h1 {
+    color: #1a73e8;
+    font-size: 2.5rem;
+    letter-spacing: 1px;
+}
+
+/* Card styling */
+.card {
+    border-radius: 12px;
+    background: #fff;
+    transition: transform 0.3s ease;
+}
+.card:hover {
+    transform: translateY(-5px);
+}
+.card-body {
+    padding: 2rem !important;
+}
+
+/* Form elements */
+.form-label {
+    color: #555;
+    font-weight: 500;
+}
+.form-control, .form-select {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    padding: 0.75rem;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 5px rgba(26, 115, 232, 0.3);
+}
+.form-check-input:checked {
+    background-color: #1a73e8;
+    border-color: #1a73e8;
+}
+.form-text {
+    color: #777;
+}
+
+/* Button styling */
+.btn-primary {
+    background-color: #1a73e8;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.75rem;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+.btn-primary:hover {
+    background-color: #1557b0;
+    transform: scale(1.02);
+}
+
+/* Alerts */
+.alert {
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+}
+
+/* Footer */
+footer {
+    background-color: #212529;
+    font-size: 0.9rem;
+    padding: 1.5rem 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    h1 {
+        font-size: 2rem;
+    }
+    .card-body {
+        padding: 1.5rem !important;
+    }
+}

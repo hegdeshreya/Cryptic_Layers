@@ -46,6 +46,10 @@
                             {% endif %}
                             <p class="card-text">
                                 <strong>Encoded Image:</strong>
+                                <text controls class="w-100 mt-2">
+
+                                    <img src="{{ url_for('text.uploaded_file', filename=file) }}" alt="Encoded Image" class="img-fluid mt-2" style="max-width: 100%; height: auto;">
+                                </text>
                                 <a href="{{ url_for('text.uploaded_file', filename=file) }}" class="btn btn-outline-primary">Download</a>
                             </p>
                         </div>

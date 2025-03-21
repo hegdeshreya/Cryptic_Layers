@@ -63,7 +63,8 @@ def multichannelimage_encode():
                 encrypted_text = vigenere_encrypt(text, key)
             elif encryption_method == 'aes':
                 encrypted_text, aes_key = aes_encrypt(text)
-
+        else:
+            encryption_method = 'none'
         encoded_image = encode_text_in_image(image, encrypted_text)
         # Force PNG output regardless of input format
         base_name = os.path.splitext(filename)[0]  # Remove original extension
@@ -126,9 +127,13 @@ def multichannelimage_decode():
                         flash("AES key is required!", "error")
                         return redirect(url_for('multichannelimage.multichannelimage_decode'))
                     decrypted_text = aes_decrypt(extracted_text, aes_key)
+        
+
             except Exception as e:
                 flash(f"Decryption failed: {str(e)}", "error")
                 return redirect(url_for('multichannelimage.multichannelimage_decode'))
+        else:
+            encryption_method = 'none'
 
         return render_template('multichannelimage/decode-multichannelimage-result.html', 
                              file=filename,

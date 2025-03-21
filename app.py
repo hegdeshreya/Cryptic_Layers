@@ -20,7 +20,7 @@ app.config['UPLOAD_FOLDER'] = "uploads"
 app.config['UPLOAD_TEXT_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "text")
 app.config['UPLOAD_AUDIO_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "audio")
 app.config['UPLOAD_MULTICHANNELIMAGE_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "multichannelimage")
-
+app.config['UPLOAD_VIDEO_FOLDER'] = os.path.join(app.config['UPLOAD_FOLDER'], "video")
 # Ensure upload folder exists
 if not os.path.exists(app.config['UPLOAD_FOLDER']):
     os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -46,17 +46,13 @@ class User(UserMixin, db.Model):
         return check_password_hash(self.password_hash, password)
 
     def get_id(self):
-        return str(self.id)  # Flask-Login expects a string
+        return self.username  # Return username instead of id
 
 # User loader for Flask-Login
 @login_manager.user_loader
 def load_user(user_id):
-    print(f"Loading user with ID: {user_id}")  # Debug
-    try:
-        return User.query.get(int(user_id))
-    except ValueError:
-        print(f"Invalid user_id: {user_id}")
-        return None
+    print(f"Loading user with username: {user_id}")  # Debug
+    return User.query.filter_by(username=user_id).first()
 
 # Create database tables
 with app.app_context():
@@ -112,6 +108,14 @@ def logout():
     logout_user()
     flash("Logged out successfully!", "success")
     return redirect(url_for('index'))
+
+# Temporary route to reset session
+@app.route('/reset_session')
+def reset_session():
+    session.clear()
+    logout_user()
+    flash("Session reset, please log in again.", "info")
+    return redirect(url_for('login'))
 
 # Optional: Add a route to clear session for debugging
 @app.route('/clear_session')

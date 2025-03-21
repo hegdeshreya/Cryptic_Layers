@@ -26,7 +26,7 @@
                     <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item"><span class="nav-link">Welcome, {{ current_user.id }}!</span></li>
+                        <li class="nav-item"><span class="nav-link">Welcome, {{ current_user.username }}!</span></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('logout') }}">Logout</a></li>
                     {% else %}
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('login') }}">Login</a></li>
@@ -128,16 +128,16 @@
     <section class="about py-5 bg-light" id="about">
         <div class="container">
             <h2 class="text-center mb-4">About Us</h2>
-            <p class="text-center text-muted">Crypticlayers is a professional platform designed to secure your data using steganography and cryptography.</p>
+            <p class="text-center text-dark">Crypticlayers is a professional platform designed to secure your data using steganography and cryptography.</p>
         </div>
     </section>
-
+    <hr class="my-10">
     <!-- Contact Section -->
     <section class="contact py-5 bg-light" id="contact">
         <div class="container">
             <h2 class="text-center mb-4">Contact Us</h2>
-            <p class="text-center text-muted">Email: support@crypticlayers.com</p>
-            <p class="text-center text-muted">Phone: (123) 456-7890</p>
+            <p class="text-center text-dark">Email: support@crypticlayers.com</p>
+            <p class="text-center text-dark">Phone: 9448940348</p>
         </div>
     </section>
 

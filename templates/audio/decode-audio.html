@@ -71,6 +71,7 @@
                                             <option value="caesar">Caesar Cipher</option>
                                             <option value="vigenere">Vigenère Cipher</option>
                                             <option value="aes">AES</option>
+                                            <option value="columnar">Columnar Cipher</option> <!-- Added Columnar Cipher -->
                                         </select>
                                     </div>
                                     <div class="mb-3" id="vigenere-key-field" style="display: none;">
@@ -80,6 +81,10 @@
                                     <div class="mb-3" id="aes-key-field" style="display: none;">
                                         <label for="aes_key" class="form-label">AES Key</label>
                                         <input type="text" name="aes_key" id="aes_key" class="form-control" placeholder="Enter AES key">
+                                    </div>
+                                    <div class="mb-3" id="columnar-key-field" style="display: none;">
+                                        <label for="columnar_key" class="form-label">Columnar Key</label>
+                                        <input type="text" name="columnar_key" id="columnar_key" class="form-control" placeholder="Enter Columnar key">
                                     </div>
                                 </div>
 
@@ -101,17 +106,19 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function toggleDecryption() {
-            const decryptYes = document.getElementById('decrypt_yes').checked;
-            const options = document.getElementById('decryption-options');
-            options.style.display = decryptYes ? 'block' : 'none';
-            toggleKeyFields(); // Ensure correct visibility on selection change
-        }
+    const decryptYes = document.getElementById('decrypt_yes').checked;
+    const options = document.getElementById('decryption-options');
+    options.style.display = decryptYes ? 'block' : 'none';
+    toggleKeyFields(); // Ensure correct visibility on selection change
+}
 
-        function toggleKeyFields() {
-            const method = document.getElementById('encryption_method').value;
-            document.getElementById('vigenere-key-field').style.display = method === 'vigenere' ? 'block' : 'none';
-            document.getElementById('aes-key-field').style.display = method === 'aes' ? 'block' : 'none';
-        }
+function toggleKeyFields() {
+    const method = document.getElementById('encryption_method').value;
+    document.getElementById('vigenere-key-field').style.display = method === 'vigenere' ? 'block' : 'none';
+    document.getElementById('aes-key-field').style.display = method === 'aes' ? 'block' : 'none';
+    document.getElementById('columnar-key-field').style.display = method === 'columnar' ? 'block' : 'none';  // Ensure Columnar Cipher Key field is shown
+}
+
     </script>
 </body>
 </html>
