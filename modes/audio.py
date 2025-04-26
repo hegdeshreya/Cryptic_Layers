@@ -61,6 +61,9 @@ def audio_encode():
                     flash("Columnar cipher key is required!", "error")
                     return redirect(url_for('audio.audio_encode'))
                 encrypted_message = columnar_encrypt(message, key)
+        else:
+            encryption_method='none'
+            
 
         try:
             with wave.open(file_path, "rb") as audio:

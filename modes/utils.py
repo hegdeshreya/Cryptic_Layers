@@ -78,7 +78,7 @@ def columnar_decrypt(ciphertext, key):
 
     # Fill the grid column-wise
     index = 0
-    for c in col_order:
+    for c in col_order:  
         for r in range(num_rows):
             if index < len(ciphertext):
                 grid[r][c] = ciphertext[index]
