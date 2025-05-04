@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Watermarked Image - Cryptic Layes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f9f9f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .form-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ccc;
+        }
+        .flash-messages {
+            color: red;
+            margin-bottom: 15px;
+        }
+        .note {
+            color: #555;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            border-radius: 4px;
+            text-decoration: none;
+            color: white;
+            background-color: #007bff;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+        img {
+            max-width: 100%;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            max-width: 350px;
+        }
+        .modal-content img {
+            width: 250px;
+            height: 250px;
+            margin-bottom: 10px;
+        }
+        .close {
+            color: #333;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+        }
+        .close:hover {
+            color: #000;
+        }
+    </style>
+</head>
+<body>
+    <section class="watermark py-5 bg-light">
+        <div class="container">
+            <h1>Watermarked Image</h1>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for category, message in messages %}
+                            <p>{{ message }}</p>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            <div class="form-container">
+                <p class="note">Your watermark "{{ name }}" is hidden in the image using steganography. The QR code in the bottom-right corner is scannable to verify the watermark. Click the image to enlarge the QR code for easier scanning if needed.</p>
+                <img src="{{ url_for('watermark.uploaded_file', filename=encoded_file, preview=1) }}" id="encodedImage" alt="Watermarked Image">
+                <div class="text-center mt-3">
+                    <a href="{{ url_for('watermark.uploaded_file', filename=encoded_file) }}" download class="btn">Download Image</a>
+                    <a href="{{ url_for('watermark.watermark_encode') }}" class="btn btn-secondary">Encode Another</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="qrModal" class="modal">
+        <div class="modal-content">
+            <span class="close">×</span>
+            <img id="enlargedQR" alt="Enlarged QR Code">
+            <p>Scan this QR code to verify the hidden watermark.</p>
+        </div>
+    </div>
+
+    <script>
+        const modal = document.getElementById('qrModal');
+        const encodedImage = document.getElementById('encodedImage');
+        const enlargedQR = document.getElementById('enlargedQR');
+        const closeBtn = document.getElementsByClassName('close')[0];
+
+        encodedImage.addEventListener('click', () => {
+            const img = new Image();
+            img.src = encodedImage.src;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const qrSize = 120; // Updated QR code size
+                const borderWidth = 6; // 5px white + 1px gray
+                const padding = 10;
+                canvas.width = qrSize;
+                canvas.height = qrSize;
+                ctx.drawImage(
+                    img,
+                    img.width - qrSize - padding - borderWidth,
+                    img.height - qrSize - padding - borderWidth,
+                    qrSize,
+                    qrSize,
+                    0,
+                    0,
+                    qrSize,
+                    qrSize
+                );
+                enlargedQR.src = canvas.toDataURL('image/png');
+                modal.style.display = 'flex';
+            };
+        });
+
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+        window.addEventListener('click', (event) => {
+            if (event.target === modal) {
+                modal.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

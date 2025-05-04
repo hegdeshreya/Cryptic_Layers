@@ -44,7 +44,6 @@
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <form method="POST" action="{{ url_for('text.text_decode') }}" enctype="multipart/form-data">
-                                
                                 <div class="mb-3">
                                     <label for="image" class="form-label">Choose Encoded Image (PNG only)</label>
                                     <input type="file" name="image" id="image" class="form-control" accept="image/png" required>
@@ -67,15 +66,25 @@
                                             <option value="caesar">Caesar Cipher</option>
                                             <option value="vigenere">Vigenère Cipher</option>
                                             <option value="aes">AES</option>
+                                            <option value="columnar">Columnar Transposition</option>
+                                            <option value="ecc">ECC (Elliptic Curve Cryptography)</option>
                                         </select>
                                     </div>
                                     <div class="mb-3" id="vigenere-key-field" style="display: none;">
-                                        <label for="encryption_key" class="form-label">Vigenère Key</label>
-                                        <input type="text" name="encryption_key" id="encryption_key" class="form-control" placeholder="Enter Vigenère key">
+                                        <label for="vigenere_key" class="form-label">Vigenère Key</label>
+                                        <input type="text" name="vigenere_key" id="vigenere_key" class="form-control" placeholder="Enter Vigenère key">
                                     </div>
                                     <div class="mb-3" id="aes-key-field" style="display: none;">
                                         <label for="aes_key" class="form-label">AES Key</label>
                                         <input type="text" name="aes_key" id="aes_key" class="form-control" placeholder="Enter AES key">
+                                    </div>
+                                    <div class="mb-3" id="columnar-key-field" style="display: none;">
+                                        <label for="columnar_key" class="form-label">Columnar Key</label>
+                                        <input type="text" name="columnar_key" id="columnar_key" class="form-control" placeholder="Enter Columnar key">
+                                    </div>
+                                    <div class="mb-3" id="ecc-key-field" style="display: none;">
+                                        <label for="ecc_key" class="form-label">ECC Private Key</label>
+                                        <input type="text" name="ecc_key" id="ecc_key" class="form-control" placeholder="Enter ECC private key">
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary w-100">Decode</button>
@@ -106,6 +115,8 @@
             const method = document.getElementById('encryption_method').value;
             document.getElementById('vigenere-key-field').style.display = method === 'vigenere' ? 'block' : 'none';
             document.getElementById('aes-key-field').style.display = method === 'aes' ? 'block' : 'none';
+            document.getElementById('columnar-key-field').style.display = method === 'columnar' ? 'block' : 'none';
+            document.getElementById('ecc-key-field').style.display = method === 'ecc' ? 'block' : 'none';
         }
     </script>
 </body>

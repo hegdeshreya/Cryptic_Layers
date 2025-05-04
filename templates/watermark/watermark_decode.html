@@ -1,0 +1,23 @@
+
+<section class="watermark py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-4">Decode Hidden Name</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST" enctype="multipart/form-data" action="{{ url_for('watermark.watermark_decode') }}">
+            <div class="mb-3">
+                <label for="image" class="form-label">Select Image with QR Code</label>
+                <input type="file" class="form-control" id="image" name="image" accept="image/png,image/jpeg,image/bmp" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Decode</button>
+        </form>
+    </div>
+</section>

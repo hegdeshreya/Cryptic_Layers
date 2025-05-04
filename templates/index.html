@@ -49,7 +49,9 @@
     <section class="cards py-5" id="methods">
         <div class="container">
             <h2 class="text-center mb-4">Choose Your Method</h2>
+            <!-- First Row: Four Cards -->
             <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                <!-- Text in Image Card -->
                 <div class="col">
                     <div class="card h-100 shadow-sm">
                         <div class="card-body">
@@ -66,63 +68,81 @@
                         </div>
                     </div>
                 </div>
-               
-           <!-- Image Card -->
-           <div class="col">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Multi-layer Image</h5>
-                    <p class="card-text">Use RGB channels for enhanced security and capacity.</p>
-                    <form method="POST" action="/">
-                        <input type="hidden" name="method" value="multichannelimage">
-                        <select name="action" class="form-select mb-3">
-                            <option value="encode">Encode</option>
-                            <option value="decode">Decode</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
-                    </form>
+                <!-- Multi-layer Image Card -->
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Multi-layer Image</h5>
+                            <p class="card-text">Use RGB channels for enhanced security and capacity.</p>
+                            <form method="POST" action="/">
+                                <input type="hidden" name="method" value="multichannelimage">
+                                <select name="action" class="form-select mb-3">
+                                    <option value="encode">Encode</option>
+                                    <option value="decode">Decode</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Audio Card -->
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Audio</h5>
+                            <p class="card-text">Embed secrets in audio files discreetly.</p>
+                            <form method="POST" action="/">
+                                <input type="hidden" name="method" value="audio">
+                                <select name="action" class="form-select mb-3">
+                                    <option value="encode">Encode</option>
+                                    <option value="decode">Decode</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                <!-- Video Card -->
+                <div class="col">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Video</h5>
+                            <p class="card-text">Conceal data across video frames.</p>
+                            <form method="POST" action="/">
+                                <input type="hidden" name="method" value="video">
+                                <select name="action" class="form-select mb-3">
+                                    <option value="encode">Encode</option>
+                                    <option value="decode">Decode</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Second Row: Watermark Card Centered -->
+            <div class="row mt-4">
+                <div class="col-12 col-md-6 offset-md-3 col-lg-4 offset-lg-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">Watermark</h5>
+                            <p class="card-text">Conceal data across video frames.</p>
+                            <form method="POST" action="/">
+                                <input type="hidden" name="method" value="watermark">
+                                <select name="action" class="form-select mb-3">
+                                    <option value="encode">Encode</option>
+                                    <option value="decode">Decode</option>
+                                </select>
+                                <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
+                            </form>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </section>
 
-        <!-- Audio Card -->
-        <div class="col">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Audio</h5>
-                    <p class="card-text">Embed secrets in audio files discreetly.</p>
-                    <form method="POST" action="/">
-                        <input type="hidden" name="method" value="audio">
-                        <select name="action" class="form-select mb-3">
-                            <option value="encode">Encode</option>
-                            <option value="decode">Decode</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-
-        <!-- Video Card -->
-        <div class="col">
-            <div class="card h-100 shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Video</h5>
-                    <p class="card-text">Conceal data across video frames.</p>
-                    <form method="POST" action="/">
-                        <input type="hidden" name="method" value="video">
-                        <select name="action" class="form-select mb-3">
-                            <option value="encode">Encode</option>
-                            <option value="decode">Decode</option>
-                        </select>
-                        <button type="submit" class="btn btn-primary w-100" {% if not current_user.is_authenticated %}disabled{% endif %}>Go</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-</section>
+  
 
     <!-- About Section -->
     <section class="about py-5 bg-light" id="about">
@@ -132,12 +152,13 @@
         </div>
     </section>
     <hr class="my-10">
+
     <!-- Contact Section -->
     <section class="contact py-5 bg-light" id="contact">
         <div class="container">
             <h2 class="text-center mb-4">Contact Us</h2>
             <p class="text-center text-dark">Email: support@crypticlayers.com</p>
-            <p class="text-center text-dark">Phone: 9448940348</p>
+            <p class="text-center text-dark">Phone: 944</p>
         </div>
     </section>
 

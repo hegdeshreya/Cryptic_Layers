@@ -44,7 +44,6 @@
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <form method="POST" action="{{ url_for('text.text_encode') }}" enctype="multipart/form-data">
-                             
                                 <div class="mb-3">
                                     <label for="image" class="form-label">Choose Image (Output will be PNG)</label>
                                     <input type="file" name="image" id="image" class="form-control" accept="image/*" required>
@@ -71,6 +70,8 @@
                                             <option value="caesar">Caesar Cipher</option>
                                             <option value="vigenere">Vigenère Cipher</option>
                                             <option value="aes">AES</option>
+                                            <option value="columnar">Columnar Transposition</option>
+                                            <option value="ecc">ECC (Elliptic Curve Cryptography)</option>
                                         </select>
                                     </div>
                                     <div class="mb-3" id="key-field" style="display: none;">
@@ -98,10 +99,19 @@
         function toggleEncryption() {
             const encryptYes = document.getElementById('encrypt_yes').checked;
             const options = document.getElementById('encryption-options');
+            const keyField = document.getElementById('key-field');
+            const encryptionMethod = document.getElementById('encryption_method');
+
             options.style.display = encryptYes ? 'block' : 'none';
-            document.getElementById('encryption_method').addEventListener('change', function() {
-                document.getElementById('key-field').style.display = this.value === 'vigenere' ? 'block' : 'none';
-            });
+            
+            // Show key field for Vigenère and Columnar, hide for others
+            function updateKeyField() {
+                keyField.style.display = ['vigenere', 'columnar'].includes(encryptionMethod.value) ? 'block' : 'none';
+            }
+            
+            // Update key field on initial load and when method changes
+            updateKeyField();
+            encryptionMethod.addEventListener('change', updateKeyField);
         }
     </script>
 </body>

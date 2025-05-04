@@ -1,0 +1,87 @@
+
+<section class="watermark py-5 bg-light">
+    <div class="container">
+        <h2 class="text-center mb-4">Decoded 3D Name</h2>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <canvas id="threeCanvas" class="w-100" style="height: 300px;"></canvas>
+                <a href="{{ url_for('watermark.watermark_decode') }}" class="btn btn-secondary mt-3">Back to Decode</a>
+            </div>
+        </div>
+    </div>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
+<script>
+    // Initialize Three.js scene
+    const canvas = document.getElementById('threeCanvas');
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+
+    // Orbit controls
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+
+    // Lighting
+    const light = new THREE.DirectionalLight(0xffffff, 0.8);
+    light.position.set(1, 1, 1);
+    scene.add(light);
+    scene.add(new THREE.AmbientLight(0x404040));
+
+    // Load font and create 3D text
+    const loader = new THREE.FontLoader();
+    loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
+        const textGeometry = new THREE.TextGeometry('{{ decoded_name | safe }}', {
+            font: font,
+            size: 1,
+            height: 0.2,
+            curveSegments: 12,
+            bevelEnabled: true,
+            bevelThickness: 0.03,
+            bevelSize: 0.02,
+            bevelOffset: 0,
+            bevelSegments: 5
+        });
+        const textMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
+        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+        // Center the text
+        textGeometry.computeBoundingBox();
+        const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+        textMesh.position.set(-textWidth / 2, 0, 0);
+        scene.add(textMesh);
+    });
+
+    // Camera position
+    camera.position.z = 5;
+
+    // Animation loop
+    function animate() {
+        requestAnimationFrame(animate);
+        controls.update();
+        renderer.render(scene, camera);
+    }
+    animate();
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+        camera.aspect = canvas.clientWidth / canvas.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    });
+</script>
