@@ -5,7 +5,7 @@ import subprocess
 from flask import Blueprint, current_app, render_template, request, flash, redirect, url_for, send_file
 from flask_login import login_required
 from werkzeug.utils import secure_filename
-from .utils import caesar_encrypt, caesar_decrypt, vigenere_encrypt, vigenere_decrypt, aes_encrypt, aes_decrypt, columnar_encrypt, columnar_decrypt
+from .utils import caesar_encrypt, caesar_decrypt, vigenere_encrypt, vigenere_decrypt, aes_encrypt, aes_decrypt, columnar_encrypt, columnar_decrypt, ecc_encrypt, ecc_decrypt, ecc_generate_keys
 import pywt
 import logging
 
@@ -23,7 +23,7 @@ def allowed_file(filename):
     """Check if the file has an allowed extension."""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@video_bp.route('/uploads/<filename>')
+@video_bp.route('/Uploads/<filename>')
 @login_required
 def uploaded_file(filename):
     """Serve uploaded files."""
@@ -38,21 +38,82 @@ def uploaded_file(filename):
 def extract_audio(video_path, audio_path):
     """Extract audio from a video file using FFmpeg."""
     try:
-        command = [r"C:\ffmpeg\bin\ffmpeg.exe", "-i", video_path, "-q:a", "0", "-map", "a", audio_path, "-y"]
-        subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        video_path = os.path.abspath(video_path)
+        audio_path = os.path.abspath(audio_path)
+        logger.debug(f"Video path: {video_path}")
+        logger.debug(f"Audio path: {audio_path}")
+
+        if not os.path.exists(video_path):
+            logger.error(f"Video file does not exist: {video_path}")
+            raise FileNotFoundError(f"Video file does not exist: {video_path}")
+
+        os.makedirs(os.path.dirname(audio_path), exist_ok=True)
+
+        command = [
+            r"C:\ffmpeg\bin\ffmpeg.exe",
+            "-i", video_path,
+            "-q:a", "0",
+            "-map", "0:a:0",
+            audio_path,
+            "-y"
+        ]
+        logger.debug(f"Running FFmpeg command: {' '.join(command)}")
+
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
         logger.debug(f"Audio extracted to: {audio_path}")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error extracting audio: {e}")
+        logger.error(f"FFmpeg error: {e.stderr}")
+        raise RuntimeError(f"FFmpeg failed: {e.stderr}")
+    except FileNotFoundError as e:
+        logger.error(f"File not found: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error extracting audio: {str(e)}")
         raise
 
 def merge_audio(video_path, audio_path, output_path):
     """Merge audio back into a video file using FFmpeg."""
     try:
-        command = [r"C:\ffmpeg\bin\ffmpeg.exe", "-i", video_path, "-i", audio_path, "-c:v", "copy", "-c:a", "aac", "-strict", "experimental", output_path, "-y"]
-        subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+        video_path = os.path.abspath(video_path)
+        audio_path = os.path.abspath(audio_path)
+        output_path = os.path.abspath(output_path)
+        logger.debug(f"Video path: {video_path}")
+        logger.debug(f"Audio path: {audio_path}")
+        logger.debug(f"Output path: {output_path}")
+
+        command = [
+            r"C:\ffmpeg\bin\ffmpeg.exe",
+            "-i", video_path,
+            "-i", audio_path,
+            "-c:v", "copy",
+            "-c:a", "aac",
+            "-map", "0:v:0",
+            "-map", "1:a:0",
+            "-shortest",
+            output_path,
+            "-y"
+        ]
+        logger.debug(f"Running FFmpeg command: {' '.join(command)}")
+
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
         logger.debug(f"Audio merged into: {output_path}")
     except subprocess.CalledProcessError as e:
-        logger.error(f"Error merging audio: {e}")
+        logger.error(f"FFmpeg error: {e.stderr}")
+        raise RuntimeError(f"FFmpeg failed: {e.stderr}")
+    except Exception as e:
+        logger.error(f"Unexpected error merging audio: {str(e)}")
         raise
 
 def text_to_bits(text):
@@ -76,7 +137,7 @@ def embed_dwt(frame, bits, bit_idx):
     flat_HH = HH.flatten()
     embed_capacity = len(flat_HH)
     for i in range(min(embed_capacity, len(bits) - bit_idx)):
-        flat_HH[i] += (20 if bits[bit_idx + i] else -20)  # Modify HH coefficients
+        flat_HH[i] += (50 if bits[bit_idx + i] else -50)
     HH = flat_HH.reshape(HH.shape)
     modified_frame = pywt.idwt2((LL, (LH, HL, HH)), 'haar')
     return cv2.cvtColor(np.clip(modified_frame, 0, 255).astype(np.uint8), cv2.COLOR_GRAY2BGR), bit_idx + min(embed_capacity, len(bits) - bit_idx)
@@ -89,56 +150,56 @@ def extract_dwt(frame, num_bits, bit_idx):
     embed_capacity = len(flat_HH)
     bits = []
     for i in range(min(num_bits - bit_idx, embed_capacity)):
-        bits.append(1 if flat_HH[i] > 10 else 0)  # Extract bits from HH coefficients
+        bits.append(1 if flat_HH[i] > 25 else 0)
     return bits, bit_idx + len(bits)
 
 def encode_video(input_path, output_path, message):
     """Encode a message into a video file."""
     try:
-        # Extract audio from the input video
         audio_path = os.path.join(current_app.config['UPLOAD_VIDEO_FOLDER'], "temp_audio.aac")
         extract_audio(input_path, audio_path)
 
-        # Convert the message to bits
         message_bits = text_to_bits(message)
         length_bits = [int(bit) for bit in bin(len(message_bits))[2:].zfill(32)]
         data_bits = length_bits + message_bits
+        logger.debug(f"Encoding {len(data_bits)} bits (32 length + {len(message_bits)} message)")
 
-        # Open the input video
         cap = cv2.VideoCapture(input_path)
         frame_width = int(cap.get(3))
         frame_height = int(cap.get(4))
         fps = int(cap.get(5))
-        fourcc = cv2.VideoWriter_fourcc(*'avc1')  # Use H.264 codec
+        frame_count = int(cap.get(7))
+        logger.debug(f"Video has {frame_count} frames, {frame_width}x{frame_height}, {fps} fps")
+        fourcc = cv2.VideoWriter_fourcc(*'avc1')
 
-        # Create a temporary video file
         temp_video_path = os.path.join(current_app.config['UPLOAD_VIDEO_FOLDER'], "temp_video.mp4")
         out = cv2.VideoWriter(temp_video_path, fourcc, fps, (frame_width, frame_height))
 
-        # Embed the message into the video frames
         bit_idx = 0
+        frame_idx = 0
         while cap.isOpened() and bit_idx < len(data_bits):
             ret, frame = cap.read()
             if not ret:
+                logger.warning(f"Ran out of frames at frame {frame_idx} with {len(data_bits) - bit_idx} bits remaining")
                 break
             frame, bit_idx = embed_dwt(frame, data_bits, bit_idx)
             out.write(frame)
+            frame_idx += 1
+        logger.debug(f"Embedded {bit_idx} bits in {frame_idx} frames")
 
-        # Write the remaining frames (if any)
         while cap.isOpened():
             ret, frame = cap.read()
             if not ret:
                 break
             out.write(frame)
+            frame_idx += 1
+        logger.debug(f"Processed {frame_idx} total frames")
 
-        # Release resources
         cap.release()
         out.release()
 
-        # Merge the extracted audio back into the video
         merge_audio(temp_video_path, audio_path, output_path)
 
-        # Clean up temporary files
         os.remove(temp_video_path)
         os.remove(audio_path)
 
@@ -151,31 +212,40 @@ def decode_video(input_path):
     """Decode a message from a video file."""
     try:
         cap = cv2.VideoCapture(input_path)
+        frame_count = int(cap.get(7))
+        logger.debug(f"Decoding from video with {frame_count} frames")
+
         length_bits = []
         bit_idx = 0
+        frame_idx = 0
         while cap.isOpened() and bit_idx < 32:
             ret, frame = cap.read()
             if not ret:
-                break
+                logger.error(f"Ran out of frames at frame {frame_idx} while extracting length")
+                raise RuntimeError("Insufficient frames to extract message length")
             bits, bit_idx = extract_dwt(frame, 32, bit_idx)
             length_bits.extend(bits)
+            frame_idx += 1
         msg_len = int(''.join(map(str, length_bits)), 2)
-        logger.debug(f"Extracted message length: {msg_len}")
+        logger.debug(f"Extracted message length: {msg_len} bits")
 
         data_bits = []
         bit_idx = 0
-        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)  # Reset to start
+        cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+        frame_idx = 0
         while cap.isOpened() and bit_idx < 32 + msg_len:
             ret, frame = cap.read()
             if not ret:
-                break
+                logger.error(f"Ran out of frames at frame {frame_idx} while extracting {32 + msg_len - bit_idx} remaining bits")
+                raise RuntimeError("Insufficient frames to extract message")
             bits, bit_idx = extract_dwt(frame, 32 + msg_len, bit_idx)
             data_bits.extend(bits)
+            frame_idx += 1
+        logger.debug(f"Extracted {len(data_bits)} bits in {frame_idx} frames")
 
         cap.release()
         extracted_message = bits_to_text(data_bits[32:32 + msg_len])
-        logger.debug(f"Extracted bits: {data_bits[32:32 + msg_len]}")
-        logger.debug(f"Extracted message: {extracted_message}")
+        logger.debug(f"Raw extracted message: {extracted_message}")
         return extracted_message
     except Exception as e:
         logger.error(f"Error decoding video: {e}")
@@ -186,10 +256,12 @@ def decode_video(input_path):
 def video_encode():
     """Handle video encoding requests."""
     if request.method == 'POST':
-        message = request.form.get('message', '')
+        message = request.form.get('message', '').strip()
         encrypt = request.form.get('encrypt', 'no')
         encryption_method = request.form.get('encryption_method', '')
-        key = request.form.get('encryption_key', '').strip()
+        encryption_key = request.form.get('encryption_key', '').strip()
+
+        logger.debug(f"Form data: message='{message}', encrypt='{encrypt}', encryption_method='{encryption_method}', encryption_key='{encryption_key}'")
 
         if not message:
             flash("Message cannot be empty!", "error")
@@ -202,27 +274,71 @@ def video_encode():
 
         filename = secure_filename(file.filename)
         upload_folder = current_app.config['UPLOAD_VIDEO_FOLDER']
+        logger.debug(f"Upload folder: {upload_folder}")
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
 
         encrypted_message = message
         aes_key = None
+        vigenere_key = None
+        columnar_key = None
+        ecc_key = None
+
         if encrypt == 'yes' and encryption_method:
-            if encryption_method == 'caesar':
-                encrypted_message = caesar_encrypt(message)
-            elif encryption_method == 'vigenere':
-                if not key:
-                    flash("Vigenère cipher key is required!", "error")
-                    return redirect(url_for('video.video_encode'))
-                encrypted_message = vigenere_encrypt(message, key)
-            elif encryption_method == 'aes':
-                encrypted_message, aes_key = aes_encrypt(message)
-            elif encryption_method == 'columnar':
-                if not key:
-                    flash("Columnar cipher key is required!", "error")
-                    return redirect(url_for('video.video_encode'))
-                encrypted_message = columnar_encrypt(message, key)
+            try:
+                if encryption_method == 'caesar':
+                    encrypted_message = caesar_encrypt(message)
+                    logger.debug(f"Encrypted message (Caesar): {encrypted_message}")
+                elif encryption_method == 'vigenere':
+                    if not encryption_key:
+                        flash("Vigenère cipher key is required!", "error")
+                        return redirect(url_for('video.video_encode'))
+                    encrypted_message = vigenere_encrypt(message, encryption_key)
+                    vigenere_key = encryption_key
+                    logger.debug(f"Encrypted message (Vigenère): {encrypted_message}")
+                elif encryption_method == 'aes':
+                    encrypted_message, aes_key = aes_encrypt(message)
+                    logger.debug(f"Encrypted message (AES): {encrypted_message}")
+                elif encryption_method == 'columnar':
+                    if not encryption_key:
+                        flash("Columnar cipher key is required!", "error")
+                        return redirect(url_for('video.video_encode'))
+                    encrypted_message = columnar_encrypt(message, encryption_key)
+                    columnar_key = encryption_key
+                    logger.debug(f"Encrypted message (Columnar): {encrypted_message}")
+                elif encryption_method == 'ecc':
+                    logger.debug("Attempting ECC encryption")
+                    try:
+                        public_key, private_key = ecc_generate_keys()
+                        logger.debug(f"ECC keys generated: public_key={public_key[:50]}..., private_key={private_key[:50]}...")
+                        encrypted_message = ecc_encrypt(message, public_key)
+                        if isinstance(encrypted_message, str) and "Encryption failed" in encrypted_message:
+                            logger.error(f"ECC encryption failed: {encrypted_message}")
+                            flash(encrypted_message, "error")
+                            return redirect(url_for('video.video_encode'))
+                        ecc_key = private_key
+                        logger.debug(f"ECC private key serialized: {ecc_key[:50]}...")
+                        # Test decryption to verify key
+                        test_decrypt = ecc_decrypt(encrypted_message, ecc_key)
+                        logger.debug(f"Test decryption result: {test_decrypt}")
+                        if isinstance(test_decrypt, str) and "Decryption failed" in test_decrypt:
+                            logger.error(f"Test decryption failed: {test_decrypt}")
+                            flash(f"ECC test decryption failed: {test_decrypt}", "error")
+                            return redirect(url_for('video.video_encode'))
+                        logger.debug(f"Encrypted message (ECC): {encrypted_message[:50]}...")
+                    except Exception as e:
+                        logger.error(f"ECC encryption error: {str(e)}")
+                        flash(f"ECC encryption failed: {str(e)}", "error")
+                        return redirect(url_for('video.video_encode'))
+            except Exception as e:
+                logger.error(f"Encryption failed: {str(e)}")
+                flash(f"Encryption failed: {str(e)}", "error")
+                return redirect(url_for('video.video_encode'))
+        else:
+            encryption_method = 'none'
+
+        logger.debug(f"Encryption result: encrypted_message='{encrypted_message[:50]}...', aes_key={aes_key}, vigenere_key={vigenere_key}, columnar_key={columnar_key}, ecc_key={ecc_key[:50] if ecc_key else None}...")
 
         try:
             output_filename = f"encoded_{filename}"
@@ -237,7 +353,10 @@ def video_encode():
                               message=message, 
                               encrypted_message=encrypted_message, 
                               encryption_method=encryption_method, 
-                              aes_key=aes_key)
+                              aes_key=aes_key, 
+                              vigenere_key=vigenere_key if encryption_method == 'vigenere' else None, 
+                              columnar_key=columnar_key if encryption_method == 'columnar' else None,
+                              ecc_key=ecc_key if encryption_method == 'ecc' else None)
 
     return render_template("video/encode-video.html")
 
@@ -253,6 +372,7 @@ def video_decode():
 
         filename = secure_filename(file.filename)
         upload_folder = current_app.config['UPLOAD_VIDEO_FOLDER']
+        logger.debug(f"Upload folder: {upload_folder}")
         os.makedirs(upload_folder, exist_ok=True)
         file_path = os.path.join(upload_folder, filename)
         file.save(file_path)
@@ -262,36 +382,63 @@ def video_decode():
             if not extracted_message:
                 flash("No message found in the video file!", "error")
                 return redirect(url_for('video.video_decode'))
+            logger.debug(f"Extracted message: {extracted_message[:50]}...")
         except Exception as e:
             flash(f"Error decoding video: {e}", "error")
             return redirect(url_for('video.video_decode'))
 
         decrypt = request.form.get('decrypt', 'no')
         encryption_method = request.form.get('encryption_method', '')
-        key = request.form.get('encryption_key', '').strip()
+        vigenere_key = request.form.get('vigenere_key', '').strip()
         aes_key = request.form.get('aes_key', '').strip()
+        columnar_key = request.form.get('columnar_key', '').strip()
+        ecc_key = request.form.get('ecc_key', '').strip()
         decrypted_message = extracted_message
 
         if decrypt == 'yes' and encryption_method:
             try:
                 if encryption_method == 'caesar':
                     decrypted_message = caesar_decrypt(extracted_message)
+                    logger.debug(f"Decrypted message (Caesar): {decrypted_message}")
                 elif encryption_method == 'vigenere':
-                    if not key:
+                    if not vigenere_key:
                         flash("Vigenère key is required!", "error")
                         return redirect(url_for('video.video_decode'))
-                    decrypted_message = vigenere_decrypt(extracted_message, key)
+                    decrypted_message = vigenere_decrypt(extracted_message, vigenere_key)
+                    logger.debug(f"Decrypted message (Vigenère): {decrypted_message}")
                 elif encryption_method == 'aes':
                     if not aes_key:
                         flash("AES key is required!", "error")
                         return redirect(url_for('video.video_decode'))
                     decrypted_message = aes_decrypt(extracted_message, aes_key)
-                elif encryption_method == 'columnar':
-                    if not key:
-                        flash("Columnar cipher key is required!", "error")
+                    logger.debug(f"Decrypted message (AES): {decrypted_message}")
+                    if isinstance(decrypted_message, str) and "Decryption failed" in decrypted_message:
+                        flash(decrypted_message, "error")
                         return redirect(url_for('video.video_decode'))
-                    decrypted_message = columnar_decrypt(extracted_message, key)
+                elif encryption_method == 'columnar':
+                    if not columnar_key:
+                        flash("Columnar key is required!", "error")
+                        return redirect(url_for('video.video_decode'))
+                    decrypted_message = columnar_decrypt(extracted_message, columnar_key)
+                    logger.debug(f"Decrypted message (Columnar): {decrypted_message}")
+                elif encryption_method == 'ecc':
+                    if not ecc_key:
+                        flash("ECC private key is required!", "error")
+                        return redirect(url_for('video.video_decode'))
+                    logger.debug(f"Received ECC private key: {ecc_key[:50]}...")
+                    try:
+                        decrypted_message = ecc_decrypt(extracted_message, ecc_key)
+                        if isinstance(decrypted_message, str) and "Decryption failed" in decrypted_message:
+                            logger.error(f"ECC decryption failed: {decrypted_message}")
+                            flash(decrypted_message, "error")
+                            return redirect(url_for('video.video_decode'))
+                        logger.debug(f"Decrypted message (ECC): {decrypted_message}")
+                    except Exception as e:
+                        logger.error(f"ECC decryption error: {str(e)}")
+                        flash(f"ECC decryption failed: {str(e)}", "error")
+                        return redirect(url_for('video.video_decode'))
             except Exception as e:
+                logger.error(f"Decryption failed: {str(e)}")
                 flash(f"Decryption failed: {str(e)}", "error")
                 return redirect(url_for('video.video_decode'))
         else:
@@ -301,6 +448,10 @@ def video_decode():
                               file=filename, 
                               extracted_message=extracted_message, 
                               decrypted_message=decrypted_message, 
-                              encryption_method=encryption_method)
+                              encryption_method=encryption_method, 
+                              vigenere_key=vigenere_key if encryption_method == 'vigenere' else None, 
+                              aes_key=aes_key if encryption_method == 'aes' else None, 
+                              columnar_key=columnar_key if encryption_method == 'columnar' else None, 
+                              ecc_key=ecc_key if encryption_method == 'ecc' else None)
 
     return render_template("video/decode-video.html")

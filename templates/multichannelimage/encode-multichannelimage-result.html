@@ -6,41 +6,85 @@
     <title>Multichannel Image Encoding Result - Crypticlayers</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body { background: #7a7676; color: white!important; }
-        .background-animation {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0.5) 10%, transparent 70%), url('https://source.unsplash.com/1600x900/?technology,dark');
-            background-size: cover; filter: blur(3px); z-index: -1;
+        body {
+            background: #352f14;
+            color: #f8f9fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        }
+        .navbar {
+            background: #212529 !important;
         }
         .card {
-            border-radius: 12px; background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px); border: none; box-shadow: 0 4px 10px rgba(255, 255, 255, 0.1);
-            color: white;
+            background: #2c2a1a;
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s ease-in-out;
+            color: #f8f9fa;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+        }
+        .card-body {
+            color: #f8f9fa;
+        }
+        .card-title, .card-text, .card-text strong, .card-body p {
+            color: #f8f9fa !important;
         }
         .btn-primary {
-            background-color: #007bff; border: none; border-radius: 8px; font-weight: bold; padding: 12px;
+            background: linear-gradient(90deg, #ff8a00, #e52e71);
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            padding: 12px;
+            transition: opacity 0.2s ease-in-out;
         }
-        .btn-primary:hover { background-color: #0056b3; }
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
         .btn-secondary {
-            background-color: #6c757d; border: none; border-radius: 8px; font-weight: bold; padding: 12px;
+            background: #555;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            padding: 12px;
+            transition: background 0.2s ease-in-out;
         }
-        .btn-secondary:hover { background-color: #5a6268; }
-        .btn-sm { padding: 5px 10px; font-size: 0.875rem; }
+        .btn-secondary:hover {
+            background: #666;
+        }
+        .btn-sm {
+            padding: 6px 12px;
+            font-size: 0.875rem;
+        }
+        code, textarea {
+            background: #3c3b23;
+            color: #f8f9fa;
+            padding: 4px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        img {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            max-width: 100%;
+        }
+        footer {
+            background: #212529;
+        }
     </style>
 </head>
 <body>
-    <div class="background-animation"></div>
-    
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Crypticlayers</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Close">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <span class="nav-link text-light">Welcome, {{ current_user.username }}!</span>
+                        <span class="nav-link text-light">Welcome, {{ current_user.id }}!</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
@@ -52,15 +96,23 @@
 
     <section class="py-5">
         <div class="container">
-            <h1 class="text-center mb-4 fw-bold text-light">Multichannel Image Encoding Result</h1>
+            <h1 class="text-center mb-4 fw-bold text-primary">Multichannel Image Encoding Result</h1>
             <div class="row justify-content-center">
                 <div class="col-md-8 col-lg-6">
-                    <div class="card shadow-sm p-4">
+                    <div class="card p-4">
                         <div class="card-body">
-                            <h5 class="card-title text-white">Success!</h5>
+                            <h4 class="text-center mb-4">Encoding Details</h4>
+                            <h5 class="card-title mb-3">Success!</h5>
                             <p class="card-text"><strong>Original Message:</strong> {{ message }}</p>
                             <p class="card-text"><strong>Encrypted Message:</strong> {{ encrypted_text }}</p>
                             <p class="card-text"><strong>Encryption Method:</strong> {{ encryption_method if encryption_method else 'None' }}</p>
+                            {% if vigenere_key %}
+                                <p class="card-text">
+                                    <strong>Vigenère Key:</strong>
+                                    <code id="vigenere_key">{{ vigenere_key }}</code>
+                                    <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('vigenere_key')">Copy Key</button>
+                                </p>
+                            {% endif %}
                             {% if aes_key %}
                                 <p class="card-text">
                                     <strong>AES Key:</strong>
@@ -68,10 +120,24 @@
                                     <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('aes_key')">Copy Key</button>
                                 </p>
                             {% endif %}
+                            {% if columnar_key %}
+                                <p class="card-text">
+                                    <strong>Columnar Key:</strong>
+                                    <code id="columnar_key">{{ columnar_key }}</code>
+                                    <button class="btn btn-sm btn-secondary" onclick="copyToClipboard('columnar_key')">Copy Key</button>
+                                </p>
+                            {% endif %}
+                            {% if ecc_private_key %}
+                                <p class="card-text">
+                                    <strong>ECC Private Key:</strong>
+                                    <textarea id="ecc_private_key" readonly rows="5" cols="50" style="background: #3c3b23; color: #f8f9fa; border-radius: 4px; padding: 4px;">{{ ecc_private_key }}</textarea>
+                                    <button class="btn btn-sm btn-secondary mt-2" onclick="copyToClipboard('ecc_private_key')">Copy Key</button>
+                                </p>
+                            {% endif %}
                             <p class="card-text">
                                 <strong>Encoded Image:</strong>
-                                <img src="{{ url_for('multichannelimage.uploaded_file', filename=file) }}" alt="Encoded Image" class="img-fluid mt-2 rounded">
-                                <a href="{{ url_for('multichannelimage.uploaded_file', filename=file) }}" class="btn btn-outline-primary mt-3">Download</a>
+                                <img src="{{ url_for('multichannelimage.uploaded_file', filename=file) }}" alt="Encoded Image" class="img-fluid mt-2">
+                                <a href="{{ url_for('multichannelimage.uploaded_file', filename=file) }}" class="btn btn-primary mt-3 w-100">Download</a>
                             </p>
                         </div>
                     </div>
@@ -93,7 +159,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         function copyToClipboard(elementId) {
-            var text = document.getElementById(elementId).innerText;
+            const element = document.getElementById(elementId);
+            const text = element.tagName === 'TEXTAREA' ? element.value : element.innerText;
             navigator.clipboard.writeText(text).then(() => alert("Key copied to clipboard!"));
         }
     </script>
