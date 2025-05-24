@@ -1,10 +1,15 @@
 import os
+import logging
 from PIL import Image
 import stepic
 from flask import Blueprint, current_app, render_template, request, flash, redirect, url_for, send_file
 from flask_login import login_required
 from werkzeug.utils import secure_filename
 from .utils import caesar_encrypt, caesar_decrypt, vigenere_encrypt, vigenere_decrypt, aes_encrypt, aes_decrypt, columnar_encrypt, columnar_decrypt, ecc_generate_keys, ecc_encrypt, ecc_decrypt
+
+# Configure logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 text_bp = Blueprint("text", __name__, template_folder="templates/text")
 
@@ -22,10 +27,10 @@ def text_encode():
 @text_bp.route("/text_encode", methods=['POST'])
 @login_required
 def text_encode_post():
-    message = request.form.get('message', '')
+    message = request.form.get('message', '').strip()
     encrypt = request.form.get('encrypt', 'no')
     encryption_method = request.form.get('encryption_method', '')
-    key = request.form.get('encryption_key', 'SECRETKEY')
+    key = request.form.get('encryption_key', 'SECRETKEY').strip()
 
     if not message:
         flash("Message cannot be empty!", "error")
@@ -36,10 +41,9 @@ def text_encode_post():
         flash("No image selected!", "error")
         return redirect(url_for('text.text_encode'))
 
-    # Validate file format for encoding (accept common image formats, but save as PNG)
     filename = secure_filename(file.filename)
     if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp')):
-        flash(f"Unsupported image format. Use PNG, JPG, or BMP.", "error")
+        flash("Unsupported image format. Use PNG, JPG, or BMP.", "error")
         return redirect(url_for('text.text_encode'))
 
     upload_folder = current_app.config['UPLOAD_TEXT_FOLDER']
@@ -63,19 +67,32 @@ def text_encode_post():
         try:
             if encryption_method == 'caesar':
                 encrypted_message = caesar_encrypt(message)
+                logger.debug(f"Caesar encrypted: {encrypted_message}")
             elif encryption_method == 'vigenere':
                 if not key:
                     flash("Vigenère key is required!", "error")
                     return redirect(url_for('text.text_encode'))
                 encrypted_message = vigenere_encrypt(message, key)
+                logger.debug(f"Vigenère encrypted: {encrypted_message}")
             elif encryption_method == 'aes':
                 encrypted_message, aes_key = aes_encrypt(message)
-                print(f"Encoded - Encrypted: {encrypted_message}, AES Key: {aes_key}")
+                logger.debug(f"AES encrypted: {encrypted_message}, key: {aes_key}")
             elif encryption_method == 'columnar':
                 if not key:
                     flash("Columnar key is required!", "error")
                     return redirect(url_for('text.text_encode'))
-                encrypted_message = columnar_encrypt(message, key)
+                # Sanitize key for columnar cipher
+                key = ''.join(c for c in key if c.isalnum()).upper()
+                if not key:
+                    flash("Invalid columnar key! Use alphanumeric characters.", "error")
+                    return redirect(url_for('text.text_encode'))
+                # Sanitize message but preserve case
+                clean_message = ''.join(c for c in message if c.isalnum() or c.isspace())
+                if not clean_message:
+                    flash("Message contains no valid characters for columnar encryption!", "error")
+                    return redirect(url_for('text.text_encode'))
+                encrypted_message = columnar_encrypt(clean_message, key)
+                logger.debug(f"Columnar encrypted: {encrypted_message}, key: {key}")
             elif encryption_method == 'ecc':
                 public_key, private_key = ecc_generate_keys()
                 encrypted_message = ecc_encrypt(message, public_key)
@@ -83,8 +100,9 @@ def text_encode_post():
                     flash(encrypted_message, "error")
                     return redirect(url_for('text.text_encode'))
                 ecc_private_key = private_key
-                print(f"Encoded - Encrypted: {encrypted_message}, ECC Private Key: {ecc_private_key}")
+                logger.debug(f"ECC encrypted: {encrypted_message}, private key: {ecc_private_key}")
         except Exception as e:
+            logger.error(f"Encryption failed: {str(e)}")
             flash(f"Encryption failed: {str(e)}", "error")
             return redirect(url_for('text.text_encode'))
     else:
@@ -92,13 +110,20 @@ def text_encode_post():
 
     try:
         im = Image.open(file_path)
-        im_encoded = stepic.encode(im, bytes(encrypted_message, encoding='utf-8'))
+        # Ensure message is encoded as bytes for stepic
+        encoded_data = encrypted_message.encode('utf-8')
+        im_encoded = stepic.encode(im, encoded_data)
         output_filename = f"encoded_{os.path.splitext(filename)[0]}.png"
         output_path = os.path.join(upload_folder, output_filename)
         im_encoded.save(output_path, 'PNG')
+        logger.debug(f"Steganography encoding successful: {output_filename}")
     except Exception as e:
-        flash(f"Error encoding message: {e}", "error")
+        logger.error(f"Error encoding message: {str(e)}")
+        flash(f"Error encoding message: {str(e)}", "error")
         return redirect(url_for('text.text_encode'))
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     return render_template("text/encode-text-result.html",
                           file=output_filename,
@@ -137,29 +162,35 @@ def text_decode_post():
         if not extracted_message:
             flash("No message found in the image!", "error")
             return redirect(url_for('text.text_decode'))
-        print(f"Decoded - Extracted: {extracted_message}")
+        logger.debug(f"Decoded - Extracted: {extracted_message}")
     except Exception as e:
-        flash(f"Error decoding image: {e}", "error")
+        logger.error(f"Error decoding image: {str(e)}")
+        flash(f"Error decoding image: {str(e)}", "error")
         return redirect(url_for('text.text_decode'))
+    finally:
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     decrypt = request.form.get('decrypt', 'no')
     encryption_method = request.form.get('encryption_method', '')
-    vigenere_key = request.form.get('vigenere_key', '')
-    aes_key = request.form.get('aes_key', '')
-    columnar_key = request.form.get('columnar_key', '')
-    ecc_key = request.form.get('ecc_key', '')
-    print(f"Decrypt: {decrypt}, Method: {encryption_method}, Vigenère Key: {vigenere_key}, AES Key: {aes_key}, Columnar Key: {columnar_key}, ECC Key: {ecc_key}")
+    vigenere_key = request.form.get('vigenere_key', '').strip()
+    aes_key = request.form.get('aes_key', '').strip()
+    columnar_key = request.form.get('columnar_key', '').strip()
+    ecc_key = request.form.get('ecc_key', '').strip()
+    logger.debug(f"Decrypt: {decrypt}, Method: {encryption_method}, Vigenère Key: {vigenere_key}, AES Key: {aes_key}, Columnar Key: {columnar_key}, ECC Key: {ecc_key}")
 
     decrypted_message = extracted_message
     if decrypt == 'yes' and encryption_method:
         try:
             if encryption_method == 'caesar':
                 decrypted_message = caesar_decrypt(extracted_message)
+                logger.debug(f"Caesar decrypted: {decrypted_message}")
             elif encryption_method == 'vigenere':
                 if not vigenere_key:
                     flash("Vigenère key is required!", "error")
                     return redirect(url_for('text.text_decode'))
                 decrypted_message = vigenere_decrypt(extracted_message, vigenere_key)
+                logger.debug(f"Vigenère decrypted: {decrypted_message}")
             elif encryption_method == 'aes':
                 if not aes_key:
                     flash("AES key is required!", "error")
@@ -168,11 +199,18 @@ def text_decode_post():
                 if "Decryption failed" in decrypted_message:
                     flash(decrypted_message, "error")
                     return redirect(url_for('text.text_decode'))
+                logger.debug(f"AES decrypted: {decrypted_message}")
             elif encryption_method == 'columnar':
                 if not columnar_key:
                     flash("Columnar key is required!", "error")
                     return redirect(url_for('text.text_decode'))
-                decrypted_message = columnar_decrypt(extracted_message, columnar_key)
+                # Sanitize key for columnar cipher
+                columnar_key = ''.join(c for c in columnar_key if c.isalnum()).upper()
+                if not columnar_key:
+                    flash("Invalid columnar key! Use alphanumeric characters.", "error")
+                    return redirect(url_for('text.text_decode'))
+                decrypted_message = columnar_decrypt(extracted_message.strip(), columnar_key)
+                logger.debug(f"Columnar decrypted: {decrypted_message}")
             elif encryption_method == 'ecc':
                 if not ecc_key:
                     flash("ECC private key is required!", "error")
@@ -181,7 +219,9 @@ def text_decode_post():
                 if "Decryption failed" in decrypted_message:
                     flash(decrypted_message, "error")
                     return redirect(url_for('text.text_decode'))
+                logger.debug(f"ECC decrypted: {decrypted_message}")
         except Exception as e:
+            logger.error(f"Decryption failed: {str(e)}")
             flash(f"Decryption failed: {str(e)}", "error")
             return redirect(url_for('text.text_decode'))
     else:

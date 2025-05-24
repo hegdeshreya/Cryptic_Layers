@@ -1,21 +1,25 @@
 import os
 import uuid
-from PIL import Image, ImageDraw, ImageFont
+import logging
+from datetime import datetime, timedelta
+from PIL import Image
 import stepic
 import qrcode
 import cv2
-from flask import Blueprint, current_app, render_template, request, flash, redirect, url_for, send_file
+import numpy as np
+from flask import Blueprint, current_app, render_template, request, flash, redirect, url_for, send_file, session
 from flask_login import login_required
 from werkzeug.utils import secure_filename
+
+# Set up logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
 
 # Define blueprint
 watermark_bp = Blueprint("watermark", __name__, template_folder="templates/watermark")
 
 # Allowed image extensions
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'bmp'}
-
-# Store image paths with UUIDs
-image_storage = {}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -24,12 +28,14 @@ def allowed_file(filename):
 @login_required
 def uploaded_file(filename):
     file_path = os.path.join(current_app.config['UPLOAD_WATERMARK_FOLDER'], filename)
+    logger.debug(f"Accessing file: {file_path}")
     if request.args.get('preview'):
         return send_file(file_path, mimetype='image/png')
     try:
         return send_file(file_path, as_attachment=True, download_name=filename)
     finally:
         if os.path.exists(file_path) and not filename.startswith("encoded_"):
+            logger.debug(f"Removing temporary file: {file_path}")
             os.remove(file_path)
 
 @watermark_bp.route("/watermark_encode", methods=['GET', 'POST'])
@@ -56,69 +62,63 @@ def watermark_encode():
         unique_id = str(uuid.uuid4())
         file_path = os.path.join(upload_folder, f"{unique_id}_{filename}")
         file.save(file_path)
+        logger.debug(f"Saved uploaded file: {file_path}")
 
         try:
             # Open and process the input image
-            im = Image.open(file_path).convert('RGBA')
+            im = Image.open(file_path).convert('RGB')
             width, height = im.size
 
-            # Create watermark layer for the main image only
-            watermark_layer = Image.new('RGBA', (width, height), (0, 0, 0, 0))
-            draw = ImageDraw.Draw(watermark_layer)
+            # Ensure image is large enough for QR code
+            if width < 150 or height < 150:
+                flash("Image is too small. Minimum dimensions are 150x150 pixels.", "error")
+                return redirect(url_for('watermark.watermark_encode'))
 
-            font_path = os.path.join(current_app.static_folder, "fonts", "arial.ttf")
-            font = ImageFont.truetype(font_path, size=50)
+            # Hide name in image using steganography
+            encoded_image = stepic.encode(im, name.encode())
 
-            text_bbox = draw.textbbox((0, 0), name, font=font)
-            text_width = text_bbox[2] - text_bbox[0]
-            text_height = text_bbox[3] - text_bbox[1]
-            text_x = (width - text_width) // 2
-            text_y = (height - text_height) // 2
-
-            shadow_color = (0, 0, 0, 128)
-            main_color = (255, 255, 255, 255)
-            for offset in range(1, 4):
-                draw.text((text_x + offset, text_y + offset), name, font=font, fill=shadow_color)
-            draw.text((text_x, text_y), name, font=font, fill=main_color)
-
-            # Apply watermark to main image
-            watermarked_image = Image.alpha_composite(im, watermark_layer)
-            watermarked_rgb = watermarked_image.convert('RGB')
-            encoded_image = stepic.encode(watermarked_rgb, name.encode())
-
-            # QR code creation
-            qr = qrcode.QRCode(version=1, box_size=6, border=2)
+            # QR code creation with small size
+            qr = qrcode.QRCode(version=1, box_size=4, border=2)
             decode_url = url_for('watermark.watermark_decode_result', unique_id=unique_id, _external=True)
             qr.add_data(decode_url)
             qr.make(fit=True)
             qr_img = qr.make_image(fill_color="black", back_color="white")
-            qr_size = 150  # Smaller QR code size
+            qr_size = 100
             qr_img = qr_img.resize((qr_size, qr_size), Image.Resampling.LANCZOS)
 
             # Calculate final image dimensions
-            padding = 20
-            new_height = height + qr_size + padding * 2  # Adjusted for smaller QR code
+            padding = 10
+            new_height = height + qr_size + padding * 2
             final_image = Image.new('RGB', (width, new_height), (255, 255, 255))
 
             # Paste main image and QR code
             final_image.paste(encoded_image, (0, 0))
-            qr_x = max(10, width - qr_size - 10)  # Right-align QR code with 10px padding
-            qr_y = height + padding  # Place QR code below image
+            qr_x = max(5, width - qr_size - 5)
+            qr_y = height + padding
             final_image.paste(qr_img, (qr_x, qr_y))
 
             encoded_filename = f"encoded_{unique_id}.png"
             encoded_path = os.path.join(upload_folder, encoded_filename)
-            final_image.save(encoded_path)
-            image_storage[unique_id] = encoded_path
+            final_image.save(encoded_path, quality=95)
+            logger.debug(f"Saved encoded image: {encoded_path}")
+
+            # Store in session
+            if 'image_storage' not in session:
+                session['image_storage'] = {}
+            session['image_storage'][unique_id] = {'path': encoded_path, 'created_at': datetime.utcnow().isoformat()}
+            session.modified = True
+            logger.debug(f"Stored in session: {unique_id}")
 
             return render_template("watermark/watermark_encode_result.html",
                                    encoded_file=encoded_filename,
                                    name=name)
         except Exception as e:
+            logger.error(f"Error encoding image: {str(e)}")
             flash(f"Failed to process image: {str(e)}", "error")
             return redirect(url_for('watermark.watermark_encode'))
         finally:
             if os.path.exists(file_path):
+                logger.debug(f"Removing temporary file: {file_path}")
                 os.remove(file_path)
 
     return render_template("watermark/watermark_encode.html")
@@ -142,31 +142,48 @@ def watermark_decode():
         unique_id = str(uuid.uuid4())
         file_path = os.path.join(upload_folder, f"decode_{unique_id}_{filename}")
         file.save(file_path)
+        logger.debug(f"Saved decode file: {file_path}")
 
         try:
-            # QR code detection with error handling
+            # Preprocess image for QR code detection
             img = cv2.imread(file_path)
-            detector = cv2.QRCodeDetector()
-            data, bbox, _ = detector.detectAndDecode(img)
-            if not data:
-                flash("No QR code found in the image!", "error")
+            if img is None:
+                flash("Failed to read image. Ensure it is a valid image file.", "error")
                 return redirect(url_for('watermark.watermark_decode'))
 
+            # Convert to grayscale and apply adaptive thresholding
+            gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+            thresh = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+                                         cv2.THRESH_BINARY, 11, 2)
+
+            # QR code detection
+            detector = cv2.QRCodeDetector()
+            data, bbox, _ = detector.detectAndDecode(thresh)
+            if not data:
+                data, bbox, _ = detector.detectAndDecode(img)
+                if not data:
+                    flash("No QR code detected. Ensure the QR code is visible and clear.", "error")
+                    return redirect(url_for('watermark.watermark_decode'))
+
             if 'unique_id=' not in data:
-                flash("Invalid QR code!", "error")
+                flash("Invalid QR code format. Please use an image with a valid QR code.", "error")
                 return redirect(url_for('watermark.watermark_decode'))
 
             unique_id = data.split('unique_id=')[-1]
+            image_storage = session.get('image_storage', {})
             if unique_id not in image_storage:
+                logger.warning(f"Image not found in session for unique_id: {unique_id}")
                 flash("Image not found or expired.", "error")
                 return redirect(url_for('watermark.watermark_decode'))
 
             return redirect(url_for('watermark.watermark_decode_result', unique_id=unique_id))
         except Exception as e:
+            logger.error(f"Error decoding image: {str(e)}")
             flash(f"Error processing image: {str(e)}", "error")
             return redirect(url_for('watermark.watermark_decode'))
         finally:
             if os.path.exists(file_path):
+                logger.debug(f"Removing temporary file: {file_path}")
                 os.remove(file_path)
 
     return render_template("watermark/watermark_decode.html")
@@ -174,19 +191,41 @@ def watermark_decode():
 @watermark_bp.route("/watermark/decode_result/<unique_id>")
 @login_required
 def watermark_decode_result(unique_id):
+    image_storage = session.get('image_storage', {})
     if unique_id not in image_storage:
+        logger.warning(f"Image not found in session for unique_id: {unique_id}")
         flash("Image not found or expired.", "error")
         return redirect(url_for('watermark.watermark_decode'))
 
-    encoded_filepath = image_storage.get(unique_id)
+    encoded_filepath = image_storage[unique_id]['path']
+    if not os.path.exists(encoded_filepath):
+        logger.warning(f"Image file missing: {encoded_filepath}")
+        flash("Image file not found on server.", "error")
+        del image_storage[unique_id]
+        session['image_storage'] = image_storage
+        session.modified = True
+        return redirect(url_for('watermark.watermark_decode'))
+
     try:
         image = Image.open(encoded_filepath)
         decoded_name = stepic.decode(image)
-        if os.path.exists(encoded_filepath):
-            os.remove(encoded_filepath)
-        del image_storage[unique_id]
-
+        logger.debug(f"Decoded name: {decoded_name}")
         return render_template("watermark/watermark_decode_result.html", decoded_name=decoded_name)
     except Exception as e:
+        logger.error(f"Error decoding image: {str(e)}")
         flash(f"Error decoding image: {str(e)}", "error")
         return redirect(url_for('watermark.watermark_decode'))
+
+@watermark_bp.route("/watermark/clear_storage")
+@login_required
+def clear_storage():
+    image_storage = session.get('image_storage', {})
+    for unique_id, data in image_storage.items():
+        file_path = data['path']
+        if os.path.exists(file_path):
+            logger.debug(f"Removing file: {file_path}")
+            os.remove(file_path)
+    session['image_storage'] = {}
+    session.modified = True
+    flash("Stored images cleared.", "success")
+    return redirect(url_for('watermark.watermark_encode'))

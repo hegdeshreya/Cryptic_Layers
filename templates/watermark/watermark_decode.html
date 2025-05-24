@@ -1,23 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decode Hidden Name - Cryptic Layes</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root {
+            --primary-color: #f8c542; /* Gold accent */
+            --primary-hover: #e0b036; /* Darker gold for hover */
+            --text-color: #ffffff; /* White for contrast */
+            --background-color: #1d1c1c; /* Deep dark gray */
+            --container-bg: rgba(40, 40, 40, 0.9); /* Semi-transparent dark */
+            --border-color: #555555; /* Subtle border */
+            --error-color: #d32f2f; /* Red for errors */
+            --success-color: #2e7d32; /* Green for success */
+            --shadow: 0 2px 8px rgba(248, 197, 66, 0.3); /* Gold glow shadow */
+        }
 
-<section class="watermark py-5 bg-light">
-    <div class="container">
-        <h2 class="text-center mb-4">Decode Hidden Name</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <form method="POST" enctype="multipart/form-data" action="{{ url_for('watermark.watermark_decode') }}">
-            <div class="mb-3">
-                <label for="image" class="form-label">Select Image with QR Code</label>
-                <input type="file" class="form-control" id="image" name="image" accept="image/png,image/jpeg,image/bmp" required>
-            </div>
-            <button type="submit" class="btn btn-primary w-100">Decode</button>
-        </form>
-    </div>
-</section>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Stars Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: rgba(248, 197, 66, 0.8); /* Gold accent */
+            border-radius: 50%;
+            animation: twinkle linear infinite;
+            box-shadow: 0 0 5px rgba(248, 197, 66, 0.5);
+        }
+
+        @keyframes twinkle {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.3;
+                transform: scale(0.5);
+            }
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            text-shadow: 0 0 5px rgba(248, 197, 66, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(5px);
+        }
+
+        .form-label {
+            display: block;
+            margin: 0.5rem 0 0.25rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(248, 197, 66, 0.2);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            color: #1a1a1a; /* Dark text for contrast */
+            background: var(--primary-color);
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s;
+            text-align: center;
+        }
+
+        .btn:hover,
+        .btn:focus {
+            background: var(--primary-hover);
+            transform: translateY(-2px);
+        }
+
+        .btn:focus {
+            box-shadow: 0 0 0 2px rgba(248, 197, 66, 0.3);
+            outline: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: #1a1a1a;
+        }
+
+        .btn-primary:hover,
+        .btn-primary:focus {
+            background: var(--primary-hover);
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            position: relative;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: rgba(211, 47, 47, 0.2); /* Semi-transparent red */
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .alert-success {
+            background: rgba(46, 125, 50, 0.2); /* Semi-transparent green */
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .btn-close {
+            color: var(--text-color);
+            font-size: 1rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            position: absolute;
+            top: 0.75rem;
+            right: 1rem;
+            transition: color 0.3s;
+        }
+
+        .btn-close:hover,
+        .btn-close:focus {
+            color: var(--primary-color);
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .btn {
+                display: block;
+                width: 100%;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <section class="watermark py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">Decode Hidden Name</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form method="POST" enctype="multipart/form-data" action="{{ url_for('watermark.watermark_decode') }}">
+                <div class="mb-3">
+                    <label for="image" class="form-label">Select Image with QR Code</label>
+                    <input type="file" class="form-control" id="image" name="image" accept="image/png,image/jpeg,image/bmp" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Decode</button>
+            </form>
+        </div>
+    </section>
+
+    <script>
+        // JavaScript for animated stars
+        const starsContainer = document.querySelector('.stars');
+        const numStars = 50; // Adjust number of stars as needed
+        for (let i = 0; i < numStars; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = `${Math.random() * 3 + 1}px`;
+            star.style.height = star.style.width;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            starsContainer.appendChild(star);
+        }
+    </script>
+</body>
+</html>

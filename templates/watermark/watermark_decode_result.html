@@ -1,87 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Decoded Name</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        :root {
+            --primary-color: #f8c542; /* Gold accent */
+            --primary-hover: #e0b036; /* Darker gold for hover */
+            --text-color: #ffffff; /* White for contrast */
+            --background-color: #1d1c1c; /* Deep dark gray */
+            --container-bg: rgba(40, 40, 40, 0.9); /* Semi-transparent dark */
+            --border-color: #555555; /* Subtle border */
+            --error-color: #d32f2f; /* Red for errors */
+            --success-color: #2e7d32; /* Green for success */
+            --shadow: 0 2px 8px rgba(248, 197, 66, 0.3); /* Gold glow shadow */
+        }
 
-<section class="watermark py-5 bg-light">
-    <div class="container">
-        <h2 class="text-center mb-4">Decoded 3D Name</h2>
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        <div class="card shadow-sm">
-            <div class="card-body">
-                <canvas id="threeCanvas" class="w-100" style="height: 300px;"></canvas>
-                <a href="{{ url_for('watermark.watermark_decode') }}" class="btn btn-secondary mt-3">Back to Decode</a>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: var(--background-color);
+            color: var(--text-color);
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Stars Background */
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .star {
+            position: absolute;
+            background: rgba(248, 197, 66, 0.8); /* Gold accent */
+            border-radius: 50%;
+            animation: twinkle linear infinite;
+            box-shadow: 0 0 5px rgba(248, 197, 66, 0.5);
+        }
+
+        @keyframes twinkle {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            100% {
+                opacity: 0.3;
+                transform: scale(0.5);
+            }
+        }
+
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            text-shadow: 0 0 5px rgba(248, 197, 66, 0.3);
+            margin-bottom: 1.5rem;
+        }
+
+        .container {
+            background: var(--container-bg);
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            backdrop-filter: blur(5px);
+        }
+
+        .card {
+            background: var(--container-bg);
+            border: none;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+        }
+
+        .card-body {
+            padding: 1.5rem;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            color: var(--text-color);
+            background: rgba(108, 117, 125, 0.9); /* Gray for secondary */
+            font-size: 1rem;
+            border: none;
+            cursor: pointer;
+            transition: background 0.3s ease, transform 0.3s;
+            text-align: center;
+        }
+
+        .btn:hover,
+        .btn:focus {
+            background: rgba(84, 91, 98, 0.9); /* Darker gray */
+            transform: translateY(-2px);
+        }
+
+        .btn:focus {
+            box-shadow: 0 0 0 2px rgba(248, 197, 66, 0.3);
+            outline: none;
+        }
+
+        .btn-secondary {
+            background: rgba(108, 117, 125, 0.9);
+            color: var(--text-color);
+        }
+
+        .btn-secondary:hover,
+        .btn-secondary:focus {
+            background: rgba(84, 91, 98, 0.9);
+        }
+
+        .alert {
+            padding: 0.75rem 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            position: relative;
+            font-size: 0.9rem;
+        }
+
+        .alert-error {
+            background: rgba(211, 47, 47, 0.2);
+            color: var(--error-color);
+            border: 1px solid var(--error-color);
+        }
+
+        .alert-success {
+            background: rgba(46, 125, 50, 0.2);
+            color: var(--success-color);
+            border: 1px solid var(--success-color);
+        }
+
+        .btn-close {
+            color: var(--text-color);
+            font-size: 1rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            position: absolute;
+            top: 0.75rem;
+            right: 1rem;
+            transition: color 0.3s;
+        }
+
+        .btn-close:hover,
+        .btn-close:focus {
+            color: var(--primary-color);
+        }
+
+        #threeCanvas {
+            width: 100%;
+            height: 300px;
+            display: block;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.3); /* Subtle dark background for canvas */
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            .card-body {
+                padding: 1rem;
+            }
+
+            #threeCanvas {
+                height: 200px; /* Smaller canvas on mobile */
+            }
+
+            .btn {
+                display: block;
+                width: 100%;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars"></div>
+    <section class="watermark py-5">
+        <div class="container">
+            <h2 class="text-center mb-4">Decoded 3D Name</h2>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <div class="card">
+                <div class="card-body">
+                    <canvas id="threeCanvas" class="w-100"></canvas>
+                    <a href="{{ url_for('watermark.watermark_decode') }}" class="btn btn-secondary mt-3">Back to Decode</a>
+                </div>
             </div>
         </div>
-    </div>
-</section>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
-<script>
-    // Initialize Three.js scene
-    const canvas = document.getElementById('threeCanvas');
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-    const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
-    renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+    </section>
 
-    // Orbit controls
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
-    controls.enableDamping = true;
-    controls.dampingFactor = 0.05;
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/FontLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/geometries/TextGeometry.js"></script>
+    <script>
+        // JavaScript for animated stars
+        const starsContainer = document.querySelector('.stars');
+        const numStars = 50;
+        for (let i = 0; i < numStars; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            star.style.width = `${Math.random() * 3 + 1}px`;
+            star.style.height = star.style.width;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDuration = `${Math.random() * 3 + 2}s`;
+            star.style.animationDelay = `${Math.random() * 2}s`;
+            starsContainer.appendChild(star);
+        }
 
-    // Lighting
-    const light = new THREE.DirectionalLight(0xffffff, 0.8);
-    light.position.set(1, 1, 1);
-    scene.add(light);
-    scene.add(new THREE.AmbientLight(0x404040));
-
-    // Load font and create 3D text
-    const loader = new THREE.FontLoader();
-    loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
-        const textGeometry = new THREE.TextGeometry('{{ decoded_name | safe }}', {
-            font: font,
-            size: 1,
-            height: 0.2,
-            curveSegments: 12,
-            bevelEnabled: true,
-            bevelThickness: 0.03,
-            bevelSize: 0.02,
-            bevelOffset: 0,
-            bevelSegments: 5
-        });
-        const textMaterial = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-        const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-
-        // Center the text
-        textGeometry.computeBoundingBox();
-        const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
-        textMesh.position.set(-textWidth / 2, 0, 0);
-        scene.add(textMesh);
-    });
-
-    // Camera position
-    camera.position.z = 5;
-
-    // Animation loop
-    function animate() {
-        requestAnimationFrame(animate);
-        controls.update();
-        renderer.render(scene, camera);
-    }
-    animate();
-
-    // Handle window resize
-    window.addEventListener('resize', () => {
-        camera.aspect = canvas.clientWidth / canvas.clientHeight;
-        camera.updateProjectionMatrix();
+        // Initialize Three.js scene
+        const canvas = document.getElementById('threeCanvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
         renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-    });
-</script>
+
+        // Orbit controls
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+
+        // Lighting
+        const light = new THREE.DirectionalLight(0xffffff, 0.8);
+        light.position.set(1, 1, 1);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        // Load font and create 3D text
+        const loader = new THREE.FontLoader();
+        loader.load('https://threejs.org/examples/fonts/helvetiker_bold.typeface.json', function (font) {
+            const textGeometry = new THREE.TextGeometry('{{ decoded_name | safe }}', {
+                font: font,
+                size: 1,
+                height: 0.2,
+                curveSegments: 12,
+                bevelEnabled: true,
+                bevelThickness: 0.03,
+                bevelSize: 0.02,
+                bevelOffset: 0,
+                bevelSegments: 5
+            });
+            const textMaterial = new THREE.MeshPhongMaterial({ color: 0xf8c542 }); /* Gold color */
+            const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+
+            // Center the text
+            textGeometry.computeBoundingBox();
+            const textWidth = textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+            textMesh.position.set(-textWidth / 2, 0, 0);
+            scene.add(textMesh);
+        });
+
+        // Camera position
+        camera.position.z = 5;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+        });
+    </script>
+</body>
+</html>

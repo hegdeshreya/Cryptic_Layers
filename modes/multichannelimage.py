@@ -42,7 +42,7 @@ def multichannelimage_encode():
         text = request.form.get('text', '').strip()
         encrypt = request.form.get('encrypt', 'no')
         encryption_method = request.form.get('encryption_method', '')
-        key = request.form.get('encryption_key', 'SECRETKEY')
+        key = request.form.get('encryption_key', 'SECRETKEY').strip()
 
         logger.debug(f"Form data: text='{text}', encrypt='{encrypt}', encryption_method='{encryption_method}', encryption_key='{key}'")
 
@@ -68,9 +68,9 @@ def multichannelimage_encode():
             return redirect(url_for('multichannelimage.multichannelimage_encode'))
 
         max_capacity = (image.size * BITS_PER_CHANNEL) // 8  # bytes
-        if len(text) > max_capacity:
-            logger.error(f"Message too long! Maximum capacity: {max_capacity} characters, provided: {len(text)}")
-            flash(f"Message too long! Maximum capacity: {max_capacity} characters", "error")
+        if len(text.encode('utf-8')) > max_capacity:
+            logger.error(f"Message too long! Maximum capacity: {max_capacity} bytes, provided: {len(text.encode('utf-8'))} bytes")
+            flash(f"Message too long! Maximum capacity: {max_capacity} bytes", "error")
             return redirect(url_for('multichannelimage.multichannelimage_encode'))
 
         encrypted_text = text
@@ -98,9 +98,24 @@ def multichannelimage_encode():
                     if not key:
                         flash("Columnar key is required!", "error")
                         return redirect(url_for('multichannelimage.multichannelimage_encode'))
-                    encrypted_text = columnar_encrypt(text, key)
+                    # Sanitize key and message for columnar cipher
+                    key = ''.join(c for c in key if c.isalnum()).upper()
+                    if not key:
+                        flash("Invalid columnar key! Use alphanumeric characters.", "error")
+                        return redirect(url_for('multichannelimage.multichannelimage_encode'))
+                    clean_text = ''.join(c for c in text if c.isalnum() or c.isspace())
+                    if not clean_text:
+                        flash("Message contains no valid characters for columnar encryption!", "error")
+                        return redirect(url_for('multichannelimage.multichannelimage_encode'))
+                    encrypted_text = columnar_encrypt(clean_text, key)
+                    # Test decryption to verify columnar cipher
+                    test_decrypt = columnar_decrypt(encrypted_text, key)
+                    if test_decrypt != clean_text:
+                        logger.error(f"Columnar test decryption failed: expected '{clean_text}', got '{test_decrypt}'")
+                        flash("Columnar encryption test failed: decryption does not match original message.", "error")
+                        return redirect(url_for('multichannelimage.multichannelimage_encode'))
                     columnar_key = key
-                    logger.debug(f"Encrypted message (Columnar): {encrypted_text[:50]}...")
+                    logger.debug(f"Encrypted message (Columnar): {encrypted_text[:50]}..., key: {key}")
                 elif encryption_method == 'ecc':
                     logger.debug("Attempting ECC encryption")
                     try:
@@ -111,7 +126,7 @@ def multichannelimage_encode():
                             logger.error(f"ECC encryption failed: {encrypted_text}")
                             flash(encrypted_text, "error")
                             return redirect(url_for('multichannelimage.multichannelimage_encode'))
-                        # Serialize ECC private key like audio.py
+                        # Serialize ECC private key
                         if isinstance(private_key, bytes):
                             ecc_private_key = base64.b64encode(private_key).decode('utf-8')
                         elif isinstance(private_key, str):
@@ -125,9 +140,8 @@ def multichannelimage_encode():
                         logger.debug(f"ECC private key serialized: {ecc_private_key[:50]}...")
                         # Test decryption to verify key
                         test_decrypt = ecc_decrypt(encrypted_text, ecc_private_key)
-                        logger.debug(f"Test decryption result: {test_decrypt}")
                         if isinstance(test_decrypt, str) and "Decryption failed" in test_decrypt:
-                            logger.error(f"Test decryption failed: {test_decrypt}")
+                            logger.error(f"ECC test decryption failed: {test_decrypt}")
                             flash(f"ECC test decryption failed: {test_decrypt}", "error")
                             return redirect(url_for('multichannelimage.multichannelimage_encode'))
                         logger.debug(f"Encrypted message (ECC): {encrypted_text[:50]}...")
@@ -135,6 +149,18 @@ def multichannelimage_encode():
                         logger.error(f"ECC encryption error: {str(e)}")
                         flash(f"ECC encryption failed: {str(e)}", "error")
                         return redirect(url_for('multichannelimage.multichannelimage_encode'))
+                # Verify encrypted text is ASCII-compatible
+                try:
+                    encrypted_text.encode('ascii')
+                except UnicodeEncodeError:
+                    logger.error(f"Encrypted text contains non-ASCII characters: {encrypted_text[:50]}...")
+                    flash("Encrypted text contains invalid characters for encoding.", "error")
+                    return redirect(url_for('multichannelimage.multichannelimage_encode'))
+                # Recheck capacity with encrypted text
+                if len(encrypted_text.encode('utf-8')) > max_capacity:
+                    logger.error(f"Encrypted message too long! Maximum capacity: {max_capacity} bytes, provided: {len(encrypted_text.encode('utf-8'))} bytes")
+                    flash(f"Encrypted message too long! Maximum capacity: {max_capacity} bytes", "error")
+                    return redirect(url_for('multichannelimage.multichannelimage_encode'))
             except Exception as e:
                 logger.error(f"Encryption failed: {str(e)}")
                 flash(f"Encryption failed: {str(e)}", "error")
@@ -156,6 +182,9 @@ def multichannelimage_encode():
             logger.error(f"Encoding failed: {str(e)}")
             flash(str(e), "error")
             return redirect(url_for('multichannelimage.multichannelimage_encode'))
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
         return render_template('multichannelimage/encode-multichannelimage-result.html', 
                               file=output_filename,
@@ -208,6 +237,9 @@ def multichannelimage_decode():
             logger.error(f"Decoding failed: {str(e)}")
             flash(str(e), "error")
             return redirect(url_for('multichannelimage.multichannelimage_decode'))
+        finally:
+            if os.path.exists(file_path):
+                os.remove(file_path)
 
         decrypted_text = extracted_text
         if decrypt == 'yes' and encryption_method:
@@ -234,24 +266,24 @@ def multichannelimage_decode():
                     if not columnar_key:
                         flash("Columnar key is required!", "error")
                         return redirect(url_for('multichannelimage.multichannelimage_decode'))
-                    decrypted_text = columnar_decrypt(extracted_text, columnar_key)
+                    # Sanitize key for columnar cipher
+                    columnar_key = ''.join(c for c in columnar_key if c.isalnum()).upper()
+                    if not columnar_key:
+                        flash("Invalid columnar key! Use alphanumeric characters.", "error")
+                        return redirect(url_for('multichannelimage.multichannelimage_decode'))
+                    decrypted_text = columnar_decrypt(extracted_text.strip(), columnar_key)
                     logger.debug(f"Decrypted text (Columnar): {decrypted_text}")
                 elif encryption_method == 'ecc':
                     if not ecc_key:
                         flash("ECC private key is required!", "error")
                         return redirect(url_for('multichannelimage.multichannelimage_decode'))
                     logger.debug(f"Attempting ECC decryption with key: {ecc_key[:50]}...")
-                    try:
-                        decrypted_text = ecc_decrypt(extracted_text, ecc_key)
-                        if isinstance(decrypted_text, str) and "Decryption failed" in decrypted_text:
-                            logger.error(f"ECC decryption failed: {decrypted_text}")
-                            flash(decrypted_text, "error")
-                            return redirect(url_for('multichannelimage.multichannelimage_decode'))
-                        logger.debug(f"Decrypted text (ECC): {decrypted_text}")
-                    except Exception as e:
-                        logger.error(f"ECC decryption error: {str(e)}")
-                        flash(f"ECC decryption failed: {str(e)}", "error")
+                    decrypted_text = ecc_decrypt(extracted_text, ecc_key)
+                    if isinstance(decrypted_text, str) and "Decryption failed" in decrypted_text:
+                        logger.error(f"ECC decryption failed: {decrypted_text}")
+                        flash(decrypted_text, "error")
                         return redirect(url_for('multichannelimage.multichannelimage_decode'))
+                    logger.debug(f"Decrypted text (ECC): {decrypted_text}")
             except Exception as e:
                 logger.error(f"Decryption failed: {str(e)}")
                 flash(f"Decryption failed: {str(e)}", "error")
