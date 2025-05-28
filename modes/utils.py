@@ -15,12 +15,72 @@ def caesar_decrypt(text, shift=3):
     return ''.join(chr((ord(char) - shift) % 256) for char in text)
 
 def vigenere_encrypt(text, key):
-    key = (key * (len(text) // len(key))) + key[:len(text) % len(key)]
-    return ''.join(chr((ord(t.upper()) - 65 + ord(k.upper()) - 65) % 26 + 65) for t, k in zip(text, key))
+    """
+    Encrypt text using Vigenère Cipher, preserving spaces, non-alphabetic characters, and exact case.
+    Only alphabetic characters (a-z, A-Z) are encrypted.
+    Key is sanitized to contain only alphabetic characters, preserving their case.
+    """
+    # Sanitize key: keep only alphabetic characters, preserve case
+    key = ''.join(c for c in key if c.isalpha())
+    if not key:
+        return "Invalid key: Key must contain at least one letter."
+
+    result = []
+    key_index = 0
+    key_length = len(key)
+
+    for char in text:
+        if char.isalpha():
+            # Determine base and modulo based on character case
+            base = 65 if char.isupper() else 97
+            # Get key character, preserving its case
+            key_char = key[key_index % key_length]
+            # Determine shift based on key character's case
+            key_base = 65 if key_char.isupper() else 97
+            shift = ord(key_char) - key_base
+            # Apply Vigenère shift, preserving case
+            encrypted_char = chr((ord(char) - base + shift) % 26 + base)
+            result.append(encrypted_char)
+            key_index += 1
+        else:
+            # Preserve non-alphabetic characters (e.g., spaces)
+            result.append(char)
+
+    return ''.join(result)
 
 def vigenere_decrypt(text, key):
-    key = (key * (len(text) // len(key))) + key[:len(text) % len(key)]
-    return ''.join(chr((ord(t.upper()) - ord(k.upper()) + 26) % 26 + 97) for t, k in zip(text, key))
+    """
+    Decrypt text encrypted with Vigenère Cipher, preserving spaces, non-alphabetic characters, and exact case.
+    Only alphabetic characters (a-z, A-Z) are decrypted.
+    Key is sanitized to contain only alphabetic characters, preserving their case.
+    """
+    # Sanitize key: keep only alphabetic characters, preserve case
+    key = ''.join(c for c in key if c.isalpha())
+    if not key:
+        return "Invalid key: Key must contain at least one letter."
+
+    result = []
+    key_index = 0
+    key_length = len(key)
+
+    for char in text:
+        if char.isalpha():
+            # Determine base and modulo based on character case
+            base = 65 if char.isupper() else 97
+            # Get key character, preserving its case
+            key_char = key[key_index % key_length]
+            # Determine shift based on key character's case
+            key_base = 65 if key_char.isupper() else 97
+            shift = ord(key_char) - key_base
+            # Reverse Vigenère shift, preserving case
+            decrypted_char = chr((ord(char) - base - shift + 26) % 26 + base)
+            result.append(decrypted_char)
+            key_index += 1
+        else:
+            # Preserve non-alphabetic characters (e.g., spaces)
+            result.append(char)
+
+    return ''.join(result)
 
 def aes_encrypt(text, key=None):
     if key is None:
@@ -40,37 +100,173 @@ def aes_decrypt(encrypted_text, key):
     except Exception:
         return "Decryption failed (invalid key or data)"
 
-def columnar_encrypt(text, key):
-    key_order = sorted(list(key))
-    col_order = [key.index(k) for k in key_order]
-    num_cols = len(key)
-    num_rows = math.ceil(len(text) / num_cols)
-    grid = [['' for _ in range(num_cols)] for _ in range(num_rows)]
-    index = 0
-    for r in range(num_rows):
-        for c in range(num_cols):
-            if index < len(text):
-                grid[r][c] = text[index]
-                index += 1
-    ciphertext = ''.join(''.join([row[c] for row in grid]) for c in col_order)
-    return ciphertext
+def columnar_encrypt(message, key):
+    """
+    Encrypt message using Columnar Transposition Cipher with the given key.
+    Preserves spaces and case, only transposes alphabetic characters.
+    Key is sanitized to contain only alphabetic characters, preserving case.
+    Uses 'X' for padding instead of spaces.
+    """
+    # Sanitize key: keep only alphabetic characters, preserve case
+    key = ''.join(c for c in key if c.isalpha())
+    if not key:
+        return "Invalid key: Key must contain at least one letter."
+
+    n_cols = len(key)
+    # Count only alphabetic characters for grid size
+    alpha_count = sum(1 for c in message if c.isalpha())
+    n_rows = (alpha_count + n_cols - 1) // n_cols  # Ceiling division for alphabetic chars
+
+    # Create grid, preserving spaces
+    grid = []
+    alpha_chars = [c for c in message if c.isalpha()]
+    spaces = [(i, c) for i, c in enumerate(message) if not c.isalpha()]  # Track spaces and other non-alpha chars
+
+    # Pad alphabetic characters with 'X' if needed
+    while len(alpha_chars) < n_rows * n_cols:
+        alpha_chars.append('X')
+
+    # Build grid row-wise with only alphabetic characters
+    for i in range(n_rows):
+        row = alpha_chars[i * n_cols:(i + 1) * n_cols]
+        grid.append(row)
+
+    # Determine column order from sorted key
+    key_order = sorted([(char, idx) for idx, char in enumerate(key)])
+    col_indices = [idx for _, idx in key_order]
+
+    # Create ciphertext by reading columns in key order
+    alpha_ciphertext = ''
+    for idx in col_indices:
+        for row in grid:
+            if idx < len(row):
+                alpha_ciphertext += row[idx]
+
+    # Reinsert spaces and non-alphabetic characters
+    result = list(alpha_ciphertext)
+    alpha_pos = 0
+    final_result = [''] * len(message)
+    for i in range(len(message)):
+        if (i, message[i]) in spaces:
+            final_result[i] = message[i]
+        else:
+            final_result[i] = result[alpha_pos]
+            alpha_pos += 1
+
+    return ''.join(final_result)
+
+def columnar_encrypt(message, key):
+    """
+    Encrypt message using Columnar Transposition Cipher with the given key.
+    Preserves spaces and non-alphabetic characters, only transposes alphabetic characters.
+    Key is sanitized to contain only alphabetic characters, preserving case.
+    Uses 'X' for padding instead of spaces.
+    """
+    # Sanitize key: keep only alphabetic characters, preserve case
+    key = ''.join(c for c in key if c.isalpha())
+    if not key:
+        return "Invalid key: Key must contain at least one letter."
+
+    n_cols = len(key)
+    # Count only alphabetic characters for grid size
+    alpha_count = sum(1 for c in message if c.isalpha())
+    n_rows = (alpha_count + n_cols - 1) // n_cols  # Ceiling division for alphabetic chars
+
+    # Track spaces and non-alphabetic characters
+    spaces = [(i, c) for i, c in enumerate(message) if not c.isalpha()]
+    alpha_chars = [c for c in message if c.isalpha()]
+
+    # Pad alphabetic characters with 'X' if needed
+    while len(alpha_chars) < n_rows * n_cols:
+        alpha_chars.append('X')
+
+    # Build grid row-wise with only alphabetic characters
+    grid = [alpha_chars[i * n_cols:(i + 1) * n_cols] for i in range(n_rows)]
+
+    # Determine column order from sorted key
+    key_order = sorted([(char, idx) for idx, char in enumerate(key)])
+    col_indices = [idx for _, idx in key_order]
+
+    # Create ciphertext by reading columns in key order
+    alpha_ciphertext = ''
+    for idx in col_indices:
+        for row in grid:
+            if idx < len(row):
+                alpha_ciphertext += row[idx]
+
+    # Reinsert spaces and non-alphabetic characters
+    result = [''] * len(message)
+    alpha_pos = 0
+    for i in range(len(message)):
+        if (i, message[i]) in spaces:
+            result[i] = message[i]
+        else:
+            if alpha_pos < len(alpha_ciphertext):
+                result[i] = alpha_ciphertext[alpha_pos]
+                alpha_pos += 1
+
+    return ''.join(result)
 
 def columnar_decrypt(ciphertext, key):
-    if key == '':
-        key = "key"
-    key_order = sorted(list(key))
-    col_order = [key.index(k) for k in key_order]
-    num_cols = len(key)
-    num_rows = math.ceil(len(ciphertext) / num_cols)
-    grid = [['' for _ in range(num_cols)] for _ in range(num_rows)]
-    index = 0
-    for c in col_order:
-        for r in range(num_rows):
-            if index < len(ciphertext):
-                grid[r][c] = ciphertext[index]
-                index += 1
-    plaintext = ''.join(''.join(row) for row in grid)
-    return plaintext
+    """
+    Decrypt message encrypted with Columnar Transposition Cipher and given key.
+    Preserves spaces and non-alphabetic characters, only transposes alphabetic characters.
+    Key is sanitized to contain only alphabetic characters, preserving case.
+    """
+    # Sanitize key: keep only alphabetic characters, preserve case
+    key = ''.join(c for c in key if c.isalpha())
+    if not key:
+        return "Invalid key: Key must contain at least one letter."
+
+    n_cols = len(key)
+    # Count only alphabetic characters for grid size
+    alpha_count = sum(1 for c in ciphertext if c.isalpha())
+    n_rows = (alpha_count + n_cols - 1) // n_cols  # Ceiling division for alphabetic chars
+
+    # Track spaces and non-alphabetic characters
+    spaces = [(i, c) for i, c in enumerate(ciphertext) if not c.isalpha()]
+    alpha_chars = [c for c in ciphertext if c.isalpha()]
+
+    # Determine column order from sorted key
+    key_order = sorted([(char, idx) for idx, char in enumerate(key)])
+    col_indices = [idx for _, idx in key_order]
+
+    # Calculate column lengths (accounting for padding)
+    col_lengths = [n_rows] * n_cols
+    extra_chars = alpha_count % n_cols if alpha_count % n_cols != 0 else n_cols
+    for i in range(n_cols):
+        if i >= extra_chars:
+            col_lengths[col_indices[i]] -= 1
+
+    # Build columns from ciphertext
+    cols = [''] * n_cols
+    pos = 0
+    for i, idx in enumerate(col_indices):
+        cols[idx] = alpha_chars[pos:pos + col_lengths[idx]]
+        pos += col_lengths[idx]
+
+    # Rebuild plaintext by reading row-wise
+    alpha_plaintext = ''
+    for i in range(n_rows):
+        for j in range(n_cols):
+            if i < len(cols[j]):
+                alpha_plaintext += cols[j][i]
+
+    # Remove padding 'X' characters
+    alpha_plaintext = alpha_plaintext.rstrip('X')
+
+    # Reinsert spaces and non-alphabetic characters
+    result = [''] * len(ciphertext)
+    alpha_pos = 0
+    for i in range(len(ciphertext)):
+        if (i, ciphertext[i]) in spaces:
+            result[i] = ciphertext[i]
+        else:
+            if alpha_pos < len(alpha_plaintext):
+                result[i] = alpha_plaintext[alpha_pos]
+                alpha_pos += 1
+
+    return ''.join(result)
 
 # ECC Asymmetric Encryption
 def ecc_generate_keys():

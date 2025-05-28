@@ -11,14 +11,15 @@ from modes.watermark import watermark_bp
 from urllib.parse import urlparse, urljoin
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('SECRET_KEY', 'your-secure-key-1234567890')
-app.config['SESSION_COOKIE_SECURE'] = False  # Set to True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.secret_key = os.environ.get('SECRET_KEY', 'Shreya-1234567890')
+app.config['SESSION_COOKIE_SECURE'] = False   # When True, cookies are only sent over HTTPS.
+                                              #Set to False here for development (HTTP), but should be True in production
+app.config['SESSION_COOKIE_HTTPONLY'] = True  #Prevents JavaScript from accessing the session cookie, improving security.
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'  #mitigating CSRF attacks by restricting cross-site cookie sharing.
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///users.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False             #Disables a feature that tracks object modifications, reducing overhead
 
 # Upload folder configuration
 app.config['UPLOAD_FOLDER'] = "Uploads"
@@ -46,7 +47,7 @@ db = SQLAlchemy(app)
 # Flask-Login setup
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = "login"
+login_manager.login_view = "login"  #login route as the default redirect for unauthenticated users trying to access protected routes.
 
 # User model
 class User(UserMixin, db.Model):
