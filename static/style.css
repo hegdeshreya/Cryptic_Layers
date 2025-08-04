@@ -1,159 +1,264 @@
-/* static/style.css */
+/* General Styling */
 body {
     margin: 0;
     padding: 0;
-    font-family: 'Arial', sans-serif;
-    background: #1d1c1c !important; /* Deep dark gray background */
-    color: linear-gradient(-45deg, #fe8c00 30%, #f83600 90%);
+    font-family: 'Inter', 'Arial', sans-serif; /* Modern font */
+    background: #1A1A1D !important; /* Deep charcoal */
+    color: #E8ECEF; /* Soft off-white */
     overflow-x: hidden;
     position: relative;
 }
 
-/* Animated Stars/Droplets Background */
-.stars {
+/* Animated Canvas Background */
+#backgroundCanvas {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    pointer-events: none;
     z-index: -1;
-}
-
-.star {
-    position: absolute;
-    background: rgba(248, 197, 66, 0.8); /* Gold accent for stars */
-    border-radius: 50%;
-    animation: twinkle linear infinite;
-    box-shadow: 0 0 5px rgba(248, 197, 66, 0.5);
-}
-
-@keyframes twinkle {
-    0% {
-        opacity: 0.3;
-        transform: scale(0.5);
-    }
-    50% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    100% {
-        opacity: 0.3;
-        transform: scale(0.5);
-    }
 }
 
 /* Navbar */
 .navbar {
     background: rgba(20, 20, 20, 0.9) !important;
-    backdrop-filter: blur(5px);
+    backdrop-filter: blur(10px);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .navbar-brand {
-    color: #f8c542 !important; /* Gold accent */
-    text-shadow: 0 0 5px rgba(248, 197, 66, 0.3);
+    color: #D4A017 !important; /* Muted gold */
+    font-weight: 700;
+    text-transform: uppercase;
+    text-shadow: 0 0 5px rgba(212, 160, 23, 0.3);
 }
 
 .nav-link {
-    color: #ffffff !important;
-    transition: color 0.3s;
+    color: #E8ECEF !important;
+    font-weight: 500;
+    transition: color 0.3s ease;
 }
 
 .nav-link:hover {
-    color: #f8c542 !important; /* Gold on hover */
+    color: #2A9D8F !important; /* Muted teal */
 }
 
 /* Hero Section */
 .hero {
-    padding: 100px 0;
-    background: rgba(0, 0, 0, 0.4);
+    padding: 120px 0;
+    background: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5));
+    height: 650px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    width: 100%;
     position: relative;
+    z-index: 1;
 }
 
 .hero h1 {
-    color: #f8c542; /* Gold accent */
-    text-shadow: 0 0 10px rgba(248, 197, 66, 0.5);
+    color: #D4A017; /* Muted gold */
+    font-size: 3.5rem;
+    font-weight: 800;
+    text-shadow: 0 0 10px rgba(212, 160, 23, 0.3);
+    margin-bottom: 1rem;
 }
 
 .hero p {
-    color: #cccccc;
+    color: rgba(200, 200, 200, 0.7); /* Muted gray */
+    font-size: 1.25rem;
+    font-weight: 400;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.hero .btn-primary {
+    background: #2A9D8F; /* Muted teal */
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    padding: 0.75rem 1.5rem;
+    transition: bac  kground 0.3s ease, transform 0.3s ease;
+}
+
+.hero .btn-primary:hover {
+    background: #48B5A7; /* Lighter teal */
+    transform: scale(1.05);
 }
 
 /* Cards Section */
 .cards {
-    padding: 60px 0;
+    padding: 80px 0;
+}
+
+.cards h2 {
+    color: #D4A017; /* Muted gold */
+    font-weight: 700;
+    margin-bottom: 2.5rem;
 }
 
 .card {
-    background: rgba(40, 40, 40, 0.9);
-    border: none;
-    transition: transform 0.3s, box-shadow 0.3s;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(248, 197, 66, 0.3); /* Gold glow */
+    transform: translateY(-8px);
+    box-shadow: 0 8px 20px rgba(42, 157, 143, 0.2); /* Teal glow */
 }
 
 .card-title {
-    color: #f8c542; /* Gold accent */
+    color: #D4A017; /* Muted gold */
+    font-weight: 600;
 }
 
 .card-text {
-    color: #bbbbbb;
+    color: rgba(200, 200, 200, 0.7);
+    font-size: 0.95rem;
 }
 
-.btn-primary {
-    background: #f8c542; /* Gold accent */
-    border: none;
-    color: #1a1a1a; /* Dark text for contrast */
-    transition: background 0.3s;
+.form-select {
+    background: rgba(30, 30, 30, 0.9); /* Darker translucent background */
+    color: #E8ECEF; /* Soft off-white for text */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.btn-primary:hover {
-    background: #e0b036; /* Slightly darker gold */
-    color: #1a1a1a;
+.form-select:focus {
+    border-color: #2A9D8F; /* Muted teal */
+    box-shadow: 0 0 5px rgba(42, 157, 143, 0.5);
+    outline: none;
 }
 
-/* About and Professional Sections */
-.about, .professional {
-    padding: 60px 0;
+/* Style for dropdown options */
+.form-select option {
+    background: #2C2C2E; /* Dark gray for dropdown options */
+    color: #E8ECEF; /* Soft off-white */
 }
 
+/* About and Contact Sections */
 .about {
+    padding: 80px 0;
     background: rgba(30, 30, 30, 0.7);
 }
 
-.professional {
-    background: rgba(20, 20, 20, 0.7);
+.about h2, .contact h2 {
+    color: #D4A017; /* Muted gold */
+    font-weight: 700;
 }
 
-h2 {
-    color: #f8c542; /* Gold accent for headings */
+.about p, .contact p {
+    color: #E8ECEF;
+    font-size: 1.1rem;
+    max-width: 700px;
+    margin: 0 auto;
 }
 
-.text-muted {
-    color: #aaaaaa !important;
+.contact a {
+   background: #1a1a1a !;
+    color: #2A9D8F;
+    transition: color 0.3s ease;
 }
 
-/* Contact Section */
-.contact {
-    background: rgba(30, 30, 30, 0.7);
+.contact a:hover {
+    color: #48B5A7;
+}
+
+/* Team Section Styling */
+.team {
+    background: rgba(30, 30, 30, 0.7); /* Dark translucent */
+    border-radius: 12px;
+    padding: 60px 0;
+    color: #E8ECEF; /* Soft off-white */
+}
+
+.team h2 {
+    color: #D4A017; /* Muted gold */
+    font-weight: 700;
+    text-shadow: 0 0 5px rgba(212, 160, 23, 0.2);
+}
+
+.team p {
+    color: rgba(200, 200, 200, 0.7); /* Muted gray */
+    font-size: 1.1rem;
+}
+
+.team .team-img {
+    width: 150px;
+    height: 150px;
+    border: 3px solid #2A9D8F; /* Muted teal border */
+    padding: 4px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 4px 12px rgba(42, 157, 143, 0.1);
+}
+
+.team .team-img:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(42, 157, 143, 0.3);
+}
+
+.team h5 {
+    color: #E8ECEF;
+    font-weight: 600;
+    margin-top: 1rem;
 }
 
 /* Footer */
 footer {
     background: rgba(10, 10, 10, 0.9);
-    color: #f8c542; /* Gold accent */
+    color: #D4A017;
+    padding: 2rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+footer p {
+    margin: 0;
+    font-size: 0.9rem;
 }
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
     .hero {
-        padding: 60px 0;
+        padding: 80px 0;
+        height: 500px;
     }
-    
+
+    .hero h1 {
+        font-size: 2.5rem;
+    }
+
+    .hero p {
+        font-size: 1rem;
+    }
+
+    .cards {
+        padding: 40px 0;
+    }
+
+    .card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar {
+        padding: 0.75rem 1rem;
+    }
+
+    .hero {
+        height: 400px;
+    }
+
     .hero h1 {
         font-size: 2rem;
+    }
+
+    .cards h2 {
+        font-size: 1.75rem;
     }
 }

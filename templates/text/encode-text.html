@@ -4,19 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Encode Text in Image - Crypticlayers</title>
+    <!-- Favicon for branding -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='encode.css') }}">
+    <!-- Lottie Player -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 <body>
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-        <div class="container">
-            <a class="navbar-brand" href="/">Crypticlayers</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Close">
+    <div class="background-animation"></div>
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand fw-bold text-uppercase" href="/">Crypticlayers</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <span class="nav-link text-light">Welcome, {{ current_user.id }}!</span>
+                        <span class="nav-link">{{ current_user.username }}!</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
@@ -25,26 +35,41 @@
             </div>
         </div>
     </nav>
+    <!-- Lottie Animation -->
+    <div class="d-flex justify-content-center my-4">
+        <lottie-player 
+            src="https://assets4.lottiefiles.com/packages/lf20_mjlh3hcy.json"  
+            background="transparent"  
+            speed="1"  
+            style="width: 120px; height: 120px;"  
+            loop  
+            autoplay>
+        </lottie-player>
+    </div>
 
     <section class="py-5">
         <div class="container">
-            <h1 class="text-center mb-4">Encode Text in Image</h1>
+            <h1 class="text-center mb-4 fw-bold">Encode Text in Image</h1>
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
+                    </div>
                 {% endif %}
             {% endwith %}
             <div class="row justify-content-center">
                 <div class="col-md-8 col-lg-6">
-                    <div class="card shadow-sm">
+                    <div class="card p-4">
                         <div class="card-body">
+                            <h4 class="text-center mb-4">Upload and Encode</h4>
                             <form method="POST" action="{{ url_for('text.text_encode') }}" enctype="multipart/form-data">
-                             
                                 <div class="mb-3">
                                     <label for="image" class="form-label">Choose Image (Output will be PNG)</label>
                                     <input type="file" name="image" id="image" class="form-control" accept="image/*" required>
@@ -55,13 +80,15 @@
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Encrypt Message?</label>
-                                    <div class="form-check">
-                                        <input type="radio" name="encrypt" id="encrypt_yes" value="yes" class="form-check-input" onclick="toggleEncryption()">
-                                        <label for="encrypt_yes" class="form-check-label">Yes</label>
-                                    </div>
-                                    <div class="form-check">
-                                        <input type="radio" name="encrypt" id="encrypt_no" value="no" class="form-check-input" onclick="toggleEncryption()" checked>
-                                        <label for="encrypt_no" class="form-check-label">No</label>
+                                    <div class="d-flex gap-3">
+                                        <div class="form-check">
+                                            <input type="radio" name="encrypt" id="encrypt_yes" value="yes" class="form-check-input" onclick="toggleEncryption()">
+                                            <label for="encrypt_yes" class="form-check-label">Yes</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input type="radio" name="encrypt" id="encrypt_no" value="no" class="form-check-input" onclick="toggleEncryption()" checked>
+                                            <label for="encrypt_no" class="form-check-label">No</label>
+                                        </div>
                                     </div>
                                 </div>
                                 <div id="encryption-options" style="display: none;">
@@ -71,14 +98,16 @@
                                             <option value="caesar">Caesar Cipher</option>
                                             <option value="vigenere">Vigenère Cipher</option>
                                             <option value="aes">AES</option>
+                                            <option value="columnar">Columnar Transposition</option>
+                                            <option value="ecc">ECC (Elliptic Curve Cryptography)</option>
                                         </select>
                                     </div>
                                     <div class="mb-3" id="key-field" style="display: none;">
-                                        <label for="encryption_key" class="form-label">Encryption Key (for Vigenère)</label>
-                                        <input type="text" name="encryption_key" id="encryption_key" class="form-control" value="SECRETKEY">
+                                        <label for="encryption_key" class="form-label">Encryption Key</label>
+                                        <input type="text" name="encryption_key" id="encryption_key" class="form-control" placeholder="Enter encryption key for Vigenère or Columnar" value="SECRETKEY">
                                     </div>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100">Encode</button>
+                                <button type="submit" class="btn btn-primary w-100 mt-3">Encode</button>
                             </form>
                         </div>
                     </div>
@@ -87,7 +116,7 @@
         </div>
     </section>
 
-    <footer class="bg-dark text-white text-center py-3">
+    <footer class="text-center py-4">
         <div class="container">
             <p>© 2025 Crypticlayers. All rights reserved.</p>
         </div>
@@ -99,10 +128,18 @@
             const encryptYes = document.getElementById('encrypt_yes').checked;
             const options = document.getElementById('encryption-options');
             options.style.display = encryptYes ? 'block' : 'none';
-            document.getElementById('encryption_method').addEventListener('change', function() {
-                document.getElementById('key-field').style.display = this.value === 'vigenere' ? 'block' : 'none';
-            });
+            toggleKeyField();
         }
+
+        function toggleKeyField() {
+            const methodSelect = document.getElementById('encryption_method');
+            const keyField = document.getElementById('key-field');
+            const methodsRequiringKey = ['vigenere', 'columnar'];
+            keyField.style.display = methodsRequiringKey.includes(methodSelect.value) ? 'block' : 'none';
+        }
+
+        document.getElementById('encryption_method').addEventListener('change', toggleKeyField);
+        document.addEventListener('DOMContentLoaded', toggleEncryption);
     </script>
 </body>
 </html>

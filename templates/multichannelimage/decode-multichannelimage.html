@@ -3,10 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Decode Message from Image - Crypticlayers</title>
+    <title>Decode Text from Image - Crypticlayers</title>
+    <!-- Favicon for branding -->
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='decode.css') }}">
+    <!-- Lottie Player -->
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 </head>
 <body>
+        <div class="background-animation"></div>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
             <a class="navbar-brand" href="/">Crypticlayers</a>
@@ -16,7 +26,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
-                        <span class="nav-link text-light">Welcome, {{ current_user.id }}!</span>
+                        <span class="nav-link text-light">Welcome, {{ current_user.username }}!</span>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
@@ -25,6 +35,17 @@
             </div>
         </div>
     </nav>
+        <!-- Lottie Animation -->
+    <div class="d-flex justify-content-center my-4">
+        <lottie-player 
+            src="https://assets4.lottiefiles.com/packages/lf20_mjlh3hcy.json"  
+            background="transparent"  
+            speed="1"  
+            style="width: 120px; height: 120px;"  
+            loop  
+            autoplay>
+        </lottie-player>
+    </div>
 
     <section class="py-5">
         <div class="container">
@@ -32,12 +53,16 @@
             
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    <div class="row justify-content-center">
+                        <div class="col-md-8 col-lg-6">
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
                         </div>
-                    {% endfor %}
+                    </div>
                 {% endif %}
             {% endwith %}
             
@@ -46,12 +71,10 @@
                     <div class="card shadow-sm">
                         <div class="card-body">
                             <form method="POST" action="{{ url_for('multichannelimage.multichannelimage_decode') }}" enctype="multipart/form-data">
-                                
                                 <div class="mb-3">
                                     <label for="image" class="form-label">Choose Encoded Image File (PNG or JPG)</label>
                                     <input type="file" name="image" id="image" class="form-control" accept=".png,.jpg,.jpeg" required>
                                 </div>
-
                                 <div class="mb-3">
                                     <label class="form-label">Decrypt Message?</label>
                                     <div class="form-check">
@@ -63,26 +86,35 @@
                                         <label for="decrypt_no" class="form-check-label">No</label>
                                     </div>
                                 </div>
-
                                 <div id="decryption-options" style="display: none;">
                                     <div class="mb-3">
                                         <label for="encryption_method" class="form-label">Decryption Method</label>
                                         <select name="encryption_method" id="encryption_method" class="form-select" onchange="toggleKeyFields()">
+                                            <option value="">Select Method</option>
                                             <option value="caesar">Caesar Cipher</option>
                                             <option value="vigenere">Vigenère Cipher</option>
                                             <option value="aes">AES</option>
+                                            <option value="columnar">Columnar Cipher</option>
+                                            <option value="ecc">ECC (Elliptic Curve Cryptography)</option>
                                         </select>
                                     </div>
                                     <div class="mb-3" id="vigenere-key-field" style="display: none;">
-                                        <label for="encryption_key" class="form-label">Vigenère Key</label>
-                                        <input type="text" name="encryption_key" id="encryption_key" class="form-control" placeholder="Enter Vigenère key">
+                                        <label for="vigenere_key" class="form-label">Vigenère Key</label>
+                                        <input type="text" name="vigenere_key" id="vigenere_key" class="form-control" placeholder="Enter Vigenère key">
                                     </div>
                                     <div class="mb-3" id="aes-key-field" style="display: none;">
                                         <label for="aes_key" class="form-label">AES Key</label>
                                         <input type="text" name="aes_key" id="aes_key" class="form-control" placeholder="Enter AES key">
                                     </div>
+                                    <div class="mb-3" id="columnar-key-field" style="display: none;">
+                                        <label for="columnar_key" class="form-label">Columnar Key</label>
+                                        <input type="text" name="columnar_key" id="columnar_key" class="form-control" placeholder="Enter Columnar key">
+                                    </div>
+                                    <div class="mb-3" id="ecc-key-field" style="display: none;">
+                                        <label for="ecc_key" class="form-label">ECC Private Key</label>
+                                        <input type="text" name="ecc_key" id="ecc_key" class="form-control" placeholder="Enter ECC private key">
+                                    </div>
                                 </div>
-
                                 <button type="submit" class="btn btn-primary w-100">Decode</button>
                             </form>
                         </div>
@@ -104,14 +136,32 @@
             const decryptYes = document.getElementById('decrypt_yes').checked;
             const options = document.getElementById('decryption-options');
             options.style.display = decryptYes ? 'block' : 'none';
-            toggleKeyFields(); // Ensure correct visibility on selection change
+            toggleKeyFields();
         }
 
         function toggleKeyFields() {
-            const method = document.getElementById('encryption_method').value;
-            document.getElementById('vigenere-key-field').style.display = method === 'vigenere' ? 'block' : 'none';
-            document.getElementById('aes-key-field').style.display = method === 'aes' ? 'block' : 'none';
+            const methodSelect = document.getElementById('encryption_method');
+            const vigenereKeyField = document.getElementById('vigenere-key-field');
+            const aesKeyField = document.getElementById('aes-key-field');
+            const columnarKeyField = document.getElementById('columnar-key-field');
+            const eccKeyField = document.getElementById('ecc-key-field');
+            const vigenereKeyInput = document.getElementById('vigenere_key');
+            const aesKeyInput = document.getElementById('aes_key');
+            const columnarKeyInput = document.getElementById('columnar_key');
+            const eccKeyInput = document.getElementById('ecc_key');
+
+            vigenereKeyField.style.display = methodSelect.value === 'vigenere' ? 'block' : 'none';
+            aesKeyField.style.display = methodSelect.value === 'aes' ? 'block' : 'none';
+            columnarKeyField.style.display = methodSelect.value === 'columnar' ? 'block' : 'none';
+            eccKeyField.style.display = methodSelect.value === 'ecc' ? 'block' : 'none';
+
+            vigenereKeyInput.required = methodSelect.value === 'vigenere';
+            aesKeyInput.required = methodSelect.value === 'aes';
+            columnarKeyInput.required = methodSelect.value === 'columnar';
+            eccKeyInput.required = methodSelect.value === 'ecc';
         }
+
+        document.addEventListener('DOMContentLoaded', toggleDecryption);
     </script>
 </body>
 </html>
